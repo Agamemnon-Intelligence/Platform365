@@ -1,5 +1,15 @@
 # Değişiklik Günlüğü
 
+## 2.0.0 — 2026-10-16 — Platform365
+
+Present ve EasyWrite tek pakette birleşti: **Platform365**.
+
+- **Platform365 ana ekranı:** iki uygulamanın dosyaları tek listede, içerikte arama, dosyayı doğru uygulamada açma, tam yedekleme / geri yükleme, depolama bilgisi
+- **Ortak çekirdek:** uygulama değiştirici, Ctrl+K komut paleti, sistem/aydınlık/karanlık tema, otomatik ve adlandırılmış sürüm geçmişi, uygulamalar arası aktarım
+- **EasyWrite (yeni):** Word uyumlu kelime işlemci — .docx/.easywrite/.md/.html/.txt okuma ve yazma, şablonlar, “/” komut menüsü, Markdown kısayolları, Türkçe okunabilirlik (Ateşman) ve yazım analizi, satır içi hesap, akıllı yazım, odak/daktilo modu, yazma hedefi, Pomodoro, dikte, sesli okuma, sürüm karşılaştırma, yapılacaklar listesi, bilgi kutuları, açılır bölümler, canlı içindekiler, bul/değiştir, Türkçe metin araçları, kağıt temaları
+- **Present:** metinden sunum, EasyWrite belgesinden slayt / belgeye dönüştürme, sunum sağlık kontrolü, sunumda kalem/vurgulayıcı/lazer/büyüteç/ızgara/siyah ekran, canlı altyazı, prova modu, ilerleme çubuğu ve süre, tek dosya web sunumu (.html), ana hat (.md) dışa aktarma, emoji ekleme
+- Present dosyaları `present/` klasörüne taşındı; eski bağlantılar ve kayıtlı sunumlar korunur
+
 ## 1.0.0 — 2026-10-04
 
 İlk sürüm.

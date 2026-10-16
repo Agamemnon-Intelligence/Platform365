@@ -1,7 +1,7 @@
-/* Present 1.0.0 — tarayıcı tabanlı sunum uygulaması */
+/* Platform365 Present 2.0.0 — tarayıcı tabanlı sunum uygulaması */
 'use strict';
 
-const APP_VERSION = '1.0.0';
+const APP_VERSION = '2.0.0';
 const FILE_FORMAT = 'present';
 const W = 960;
 let H = 540; // slayt yüksekliği; açık sunumun en-boy oranına göre değişir (16:9 = 540, 4:3 = 720)
@@ -560,6 +560,7 @@ async function openDeck(id) {
   resetHistory();
   renderAll();
   fitStage();
+  Fx.onOpen(deck);
 }
 
 async function createDeck() {
@@ -576,6 +577,8 @@ async function route() {
     location.replace(`#/d/${d.id}`);
     return;
   }
+  const ib = location.hash.match(/^#\/inbox\/(.+)$/);
+  if (ib) { Fx.handleInbox(decodeURIComponent(ib[1])); return; }
   const m = location.hash.match(/^#\/d\/(.+)$/);
   if (m) openDeck(decodeURIComponent(m[1]));
   else showHome();
@@ -1031,6 +1034,9 @@ function addElement(type) {
   } else if (type === 'image') {
     $('#fileImage').click();
     return;
+  } else if (type === 'emoji') {
+    Fx.insertEmoji();
+    return;
   }
   curSlide().elements.push(el);
   selId = el.id;
@@ -1372,6 +1378,7 @@ function startPresentation(fromStart = false) {
   const p = $('#presenter');
   p.hidden = false;
   if (p.requestFullscreen) p.requestFullscreen().catch(() => {});
+  Fx.onPresentStart();
   showPresented();
 }
 function showPresented() {
@@ -1382,6 +1389,7 @@ function showPresented() {
   scaler.appendChild(s);
   fitPresenter();
   $('#pCount').textContent = `${pIndex + 1} / ${deck.slides.length}`;
+  Fx.onSlideShown(pIndex);
 }
 function fitPresenter() {
   const s = $('#presenterScaler .slide');
@@ -1397,6 +1405,7 @@ function presentGo(d) {
   if (n !== pIndex) { pIndex = n; showPresented(); }
 }
 function endPresentation() {
+  Fx.onPresentEnd();
   $('#presenter').hidden = true;
   if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
   selectSlide(pIndex);
@@ -1435,7 +1444,7 @@ function loadLib() {
   if (libPromise) return libPromise;
   libPromise = new Promise((res, rej) => {
     const s = document.createElement('script');
-    s.src = 'vendor/pptxgen.bundle.js';
+    s.src = '../vendor/pptxgen.bundle.js';
     s.onload = () => res();
     s.onerror = () => { libPromise = null; rej(new Error('PowerPoint kütüphanesi yüklenemedi')); };
     document.head.appendChild(s);
@@ -1602,7 +1611,9 @@ function bindEvents() {
     if (!b) return;
     menu.hidden = true;
     await saveNow();
-    exportFile(deck, b.dataset.export);
+    if (b.dataset.export === 'html') Fx.exportHtml();
+    else if (b.dataset.export === 'md') Fx.exportMarkdown();
+    else exportFile(deck, b.dataset.export);
   });
   document.addEventListener('click', (e) => { if (!e.target.closest('.menu')) menu.hidden = true; });
   $('#btnPrint').addEventListener('click', async () => {
@@ -1746,8 +1757,8 @@ function bindEvents() {
   $('#pPrev').addEventListener('click', (e) => { e.stopPropagation(); presentGo(-1); });
   $('#pNext').addEventListener('click', (e) => { e.stopPropagation(); presentGo(1); });
   $('#pExit').addEventListener('click', (e) => { e.stopPropagation(); endPresentation(); });
-  pres.addEventListener('click', (e) => { if (!e.target.closest('.presenter-bar')) presentGo(1); });
-  pres.addEventListener('contextmenu', (e) => { e.preventDefault(); presentGo(-1); });
+  pres.addEventListener('click', (e) => { if (!e.target.closest('.presenter-bar, .p-overview') && !Fx.tool) presentGo(1); });
+  pres.addEventListener('contextmenu', (e) => { e.preventDefault(); if (!Fx.tool) presentGo(-1); });
   pres.addEventListener('pointermove', () => {
     pres.classList.add('show-cursor');
     clearTimeout(pCursorTimer);
@@ -1756,7 +1767,7 @@ function bindEvents() {
   let touchX = null;
   pres.addEventListener('touchstart', (e) => { touchX = e.touches[0].clientX; }, { passive: true });
   pres.addEventListener('touchend', (e) => {
-    if (touchX === null) return;
+    if (touchX === null || Fx.tool) return;
     const dx = e.changedTouches[0].clientX - touchX;
     if (Math.abs(dx) > 50) { e.preventDefault(); presentGo(dx < 0 ? 1 : -1); }
     touchX = null;
@@ -1773,6 +1784,7 @@ function bindEvents() {
 function onKey(e) {
   const pres = !$('#presenter').hidden;
   if (pres) {
+    if (Fx.onPresentKey(e)) return;
     if (['ArrowRight', 'ArrowDown', 'PageDown', ' ', 'Enter', 'n'].includes(e.key)) { e.preventDefault(); presentGo(1); }
     else if (['ArrowLeft', 'ArrowUp', 'PageUp', 'Backspace', 'p'].includes(e.key)) { e.preventDefault(); presentGo(-1); }
     else if (e.key === 'Home') { pIndex = 0; showPresented(); }
@@ -1780,7 +1792,7 @@ function onKey(e) {
     else if (e.key === 'Escape') endPresentation();
     return;
   }
-  if (!deck) return;
+  if (!deck || P365.hasDialog()) return;
   const mod = e.ctrlKey || e.metaKey;
   const k = e.key.toLowerCase();
 
@@ -1858,22 +1870,10 @@ function setupPwa() {
     deferred = null;
     btn.hidden = true;
   });
-  window.addEventListener('appinstalled', () => { btn.hidden = true; toast('Present yüklendi!'); });
+  window.addEventListener('appinstalled', () => { btn.hidden = true; toast('Platform365 yüklendi!'); });
 
-  if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-    // Yeni service worker devraldığında güncel kodla bir kez yeniden yükle
-    const hadController = !!navigator.serviceWorker.controller;
-    let reloading = false;
-    navigator.serviceWorker.addEventListener('controllerchange', async () => {
-      if (!hadController || reloading) return;
-      reloading = true;
-      if (deck) await saveNow();
-      location.reload();
-    });
-    navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' })
-      .then((reg) => reg.update())
-      .catch((e) => console.warn('Service worker kaydedilemedi', e));
-  }
+  // Yeni service worker devraldığında güncel kodla bir kez yeniden yükle
+  P365.registerSw(async () => { if (deck) await saveNow(); });
 
   // Yüklü uygulamada .present dosyası ile açma
   if ('launchQueue' in window) {
@@ -1889,8 +1889,11 @@ function setupPwa() {
 
 (async function init() {
   $$('.app-version').forEach((n) => { n.textContent = `v${APP_VERSION}`; });
+  // features.js de yüklendikten sonra başla
+  if (document.readyState === 'loading') await new Promise((r) => document.addEventListener('DOMContentLoaded', r, { once: true }));
   await Store.open();
   bindEvents();
+  Fx.init();
   setupPwa();
   await route();
 })();

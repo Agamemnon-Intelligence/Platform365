@@ -1,7 +1,7 @@
 {
-  "name": "present",
-  "version": "1.0.0",
-  "description": "Present — tarayıcıda çalışan, çevrimdışı kullanılabilen (PWA) sunum hazırlama uygulaması",
+  "name": "platform365",
+  "version": "2.0.0",
+  "description": "Platform365 — Present (sunum) ve EasyWrite (belge) uygulamalarını birleştiren, tarayıcıda çalışan çevrimdışı (PWA) ofis paketi",
   "private": true,
   "license": "MIT",
   "scripts": {

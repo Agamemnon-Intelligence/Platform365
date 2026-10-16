@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>EasyWrite — Platform365</title>
+  <meta name="description" content="Platform365 EasyWrite — tarayıcıda çalışan, çevrimdışı kullanılabilen kelime işlemci.">
+  <meta name="theme-color" content="#2563eb">
+  <link rel="manifest" href="../manifest.webmanifest">
+  <link rel="icon" href="../icons/easywrite.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="../icons/icon-192.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Platform365">
+  <link rel="stylesheet" href="../shared/platform.css">
+  <link rel="stylesheet" href="styles.css">
+  <script src="../shared/platform.js" data-root="../"></script>
+</head>
+<body class="app-easywrite">
+  <header class="topbar">
+    <button class="brand" id="btnHome" title="Belgelerim">
+      <img src="../icons/easywrite.svg" alt="" width="28" height="28">
+      <span class="p365-name">Platform365</span><span class="p365-app">EasyWrite</span>
+    </button>
+    <div class="file-meta editor-only">
+      <input id="docTitle" class="deck-title" value="Adsız belge" aria-label="Belge adı" spellcheck="false">
+      <span id="saveState" class="save-state">Kaydedildi</span>
+    </div>
+    <div class="spacer"></div>
+    <div class="top-actions">
+      <button class="btn ghost editor-only" id="btnUndo" title="Geri al (Ctrl+Z)">↶</button>
+      <button class="btn ghost editor-only" id="btnRedo" title="Yinele (Ctrl+Y)">↷</button>
+      <button class="btn ghost editor-only" id="btnPrint" title="Yazdır / PDF (Ctrl+P)">🖨</button>
+      <button class="btn ghost editor-only" id="btnVersions" title="Sürüm geçmişi ve karşılaştırma">🕘</button>
+      <div class="menu editor-only">
+        <button class="btn" id="btnTools" aria-haspopup="true">✨<span class="lbl"> Araçlar</span></button>
+        <div class="menu-list" id="toolsMenu" hidden>
+          <div class="menu-label">Yazma</div>
+          <button data-tool="focus"><b>Odak modu</b><small>Yalnızca yazdığınız paragraf parlak kalır (F11 değil, Ctrl+Shift+F)</small></button>
+          <button data-tool="typewriter"><b>Daktilo kaydırma</b><small>İmleç hep ekranın ortasında durur</small></button>
+          <button data-tool="dictate"><b>Sesle yaz (dikte)</b><small>Konuşun, metin imlece yazılsın</small></button>
+          <button data-tool="speak"><b>Sesli oku</b><small>Seçimi veya tüm belgeyi okur</small></button>
+          <button data-tool="pomodoro"><b>Pomodoro zamanlayıcı</b><small>25 dk odak + 5 dk mola</small></button>
+          <button data-tool="goal"><b>Yazma hedefi</b><small>Kelime hedefi koyun, ilerlemeyi izleyin</small></button>
+          <hr>
+          <div class="menu-label">Metin</div>
+          <button data-tool="find"><b>Bul ve değiştir</b><small>Ctrl+F / Ctrl+H — tüm eşleşmeler vurgulanır</small></button>
+          <button data-tool="case-upper"><b>BÜYÜK HARF</b><small>Türkçe kurallarıyla (i → İ)</small></button>
+          <button data-tool="case-lower"><b>küçük harf</b><small>Türkçe kurallarıyla (I → ı)</small></button>
+          <button data-tool="case-title"><b>Başlık Durumu</b><small>Her Kelimenin İlk Harfi Büyük</small></button>
+          <button data-tool="case-sentence"><b>Cümle durumu</b><small>Yalnızca cümle başları büyük</small></button>
+          <button data-tool="clean"><b>Metni temizle</b><small>Fazla boşluk, boş paragraf ve çift noktalama</small></button>
+          <button data-tool="sort"><b>Listeyi sırala (A→Z)</b><small>İmlecin bulunduğu liste veya seçili paragraflar</small></button>
+          <button data-tool="toc"><b>İçindekiler ekle / güncelle</b><small>Başlıklardan tıklanabilir dizin</small></button>
+          <hr>
+          <div class="menu-label">Dönüştür</div>
+          <button data-tool="to-present"><b>Sunuma dönüştür</b><small>Başlıklar slayt, maddeler slayt maddesi olur (Present)</small></button>
+          <button data-tool="snapshot"><b>Sürüm kaydet</b><small>Adlandırılmış sürüm; sonra karşılaştırabilirsiniz</small></button>
+          <button data-tool="page"><b>Sayfa düzeni</b><small>Kağıt boyutu, kenar boşluğu, yazı tipi, kağıt rengi</small></button>
+          <button data-tool="keys"><b>Kısayollar ve Markdown</b><small>Hızlı yazma yöntemleri</small></button>
+        </div>
+      </div>
+      <div class="menu editor-only">
+        <button class="btn" id="btnDownload" aria-haspopup="true">⬇<span class="lbl"> İndir</span></button>
+        <div class="menu-list" id="downloadMenu" hidden>
+          <button data-export="easywrite"><b>EasyWrite dosyası (.easywrite)</b><small>Kayıpsız; içeride geçerli Word paketi</small></button>
+          <button data-export="docx"><b>Word (.docx)</b><small>Word, Google Dokümanlar, LibreOffice, Pages</small></button>
+          <button data-export="pdf"><b>PDF / Yazdır</b><small>Sayfa düzeni ayarlarıyla</small></button>
+          <button data-export="md"><b>Markdown (.md)</b><small>GitHub, Notion, Obsidian ile uyumlu</small></button>
+          <button data-export="html"><b>Web sayfası (.html)</b><small>Tek dosya, biçimli</small></button>
+          <button data-export="txt"><b>Düz metin (.txt)</b><small>Yalnızca yazı</small></button>
+        </div>
+      </div>
+      <button class="btn primary editor-only" id="btnToPresent" title="Bu belgeden sunum oluştur">▶<span class="lbl"> Sunuma çevir</span></button>
+      <button class="btn ghost" id="btnInstall" hidden title="Uygulamayı yükle">⤓ Yükle</button>
+    </div>
+  </header>
+
+  <!-- Ana sayfa -->
+  <main id="homeView" class="home">
+    <section class="home-hero">
+      <h1>Belgeleriniz</h1>
+      <p>Yeni bir belge oluşturun ya da Word (.docx), Markdown, metin veya HTML dosyanızı açın. Dosyaları buraya sürükleyip bırakabilirsiniz. Her şey cihazınızda saklanır, çevrimdışı da çalışır.</p>
+      <div class="home-actions">
+        <button class="btn primary lg" id="btnNewDoc">＋ Boş belge</button>
+        <button class="btn lg" id="btnImport">📂 Dosya aç (.docx, .easywrite, .md, .txt, .html)</button>
+      </div>
+    </section>
+    <section>
+      <h2 class="section-title">Şablonlar</h2>
+      <div id="tplGrid" class="tpl-grid"></div>
+    </section>
+    <section>
+      <h2 class="section-title">Son belgeler</h2>
+      <div id="docGrid" class="doc-grid"></div>
+      <p id="emptyHint" class="empty-hint" hidden>Henüz belge yok. Bir şablon seçin veya “Boş belge” ile başlayın.</p>
+    </section>
+    <footer class="home-footer">Platform365 · EasyWrite <span class="app-version"></span></footer>
+  </main>
+
+  <!-- Düzenleyici -->
+  <main id="editorView" class="editor" hidden>
+    <div class="ribbon" id="ribbon">
+      <select id="blockStyle" title="Paragraf stili" class="rb-select">
+        <option value="p">Normal</option>
+        <option value="h1">Başlık 1</option>
+        <option value="h2">Başlık 2</option>
+        <option value="h3">Başlık 3</option>
+        <option value="blockquote">Alıntı</option>
+        <option value="pre">Kod</option>
+      </select>
+      <select id="fontName" title="Yazı tipi" class="rb-select">
+        <option>Calibri</option><option>Arial</option><option>Georgia</option><option>Times New Roman</option>
+        <option>Verdana</option><option>Trebuchet MS</option><option>Garamond</option><option>Courier New</option><option>Segoe UI</option>
+      </select>
+      <select id="fontSize" title="Yazı boyutu (pt)" class="rb-select rb-size">
+        <option>8</option><option>9</option><option>10</option><option>11</option><option selected>12</option><option>14</option><option>16</option>
+        <option>18</option><option>20</option><option>24</option><option>28</option><option>36</option><option>48</option><option>72</option>
+      </select>
+      <span class="rb-sep"></span>
+      <button data-cmd="bold" title="Kalın (Ctrl+B)"><b>K</b></button>
+      <button data-cmd="italic" title="İtalik (Ctrl+I)"><i>İ</i></button>
+      <button data-cmd="underline" title="Altı çizili (Ctrl+U)"><u>A</u></button>
+      <button data-cmd="strikeThrough" title="Üstü çizili"><s>Ü</s></button>
+      <button data-cmd="superscript" title="Üst simge">x²</button>
+      <button data-cmd="subscript" title="Alt simge">x₂</button>
+      <label class="rb-color" title="Yazı rengi"><span>A</span><input type="color" id="foreColor" value="#dc2626"></label>
+      <label class="rb-color hl" title="Vurgu rengi"><span>🖍</span><input type="color" id="hiliteColor" value="#fde047"></label>
+      <button data-cmd="removeFormat" title="Biçimi temizle">⌫</button>
+      <span class="rb-sep"></span>
+      <button data-cmd="justifyLeft" title="Sola hizala">⯇</button>
+      <button data-cmd="justifyCenter" title="Ortala">≡</button>
+      <button data-cmd="justifyRight" title="Sağa hizala">⯈</button>
+      <button data-cmd="justifyFull" title="İki yana yasla">☰</button>
+      <select id="lineHeight" title="Satır aralığı" class="rb-select rb-size">
+        <option value="">↕</option><option value="1">1,0</option><option value="1.15">1,15</option><option value="1.5">1,5</option><option value="2">2,0</option>
+      </select>
+      <span class="rb-sep"></span>
+      <button data-cmd="insertUnorderedList" title="Madde işaretli liste">•≡</button>
+      <button data-cmd="insertOrderedList" title="Numaralı liste">1≡</button>
+      <button data-act="checklist" title="Yapılacaklar listesi">☑</button>
+      <button data-cmd="outdent" title="Girintiyi azalt">⇤</button>
+      <button data-cmd="indent" title="Girintiyi artır">⇥</button>
+      <span class="rb-sep"></span>
+      <button data-act="link" title="Bağlantı (Ctrl+K değil: Ctrl+L)">🔗</button>
+      <button data-act="image" title="Görsel">🖼</button>
+      <button data-act="table" title="Tablo">▦</button>
+      <button data-act="callout" title="Bilgi kutusu">💡</button>
+      <button data-act="details" title="Açılır bölüm">▸</button>
+      <button data-act="hr" title="Ayraç çizgisi">―</button>
+      <button data-act="pagebreak" title="Sayfa sonu (Ctrl+Enter)">⤓</button>
+      <button data-act="emoji" title="Emoji">😀</button>
+      <span class="rb-sep"></span>
+      <button data-act="find" title="Bul ve değiştir (Ctrl+F)">🔎</button>
+      <button data-act="focus" title="Odak modu (Ctrl+Shift+F)">◎</button>
+      <button data-act="panel" title="Ana hat ve içgörüler paneli">◧</button>
+    </div>
+
+    <div class="ed-body">
+      <aside class="outline-panel" id="outlinePanel">
+        <h3>Ana hat</h3>
+        <nav id="outline" class="outline"></nav>
+      </aside>
+      <div class="page-wrap" id="pageWrap">
+        <div class="page-zoom" id="pageZoom">
+          <article id="page" class="page" contenteditable="true" spellcheck="true" lang="tr" aria-label="Belge"></article>
+        </div>
+      </div>
+      <aside class="insight-panel" id="insightPanel">
+        <div id="insights"></div>
+      </aside>
+    </div>
+
+    <footer class="statusbar">
+      <span id="stWords">0 kelime</span>
+      <span id="stSel" hidden></span>
+      <span id="stRead"></span>
+      <span id="stPages"></span>
+      <span id="stGoal" class="st-goal" hidden><i></i><b></b></span>
+      <span id="stPomo" class="st-pomo" hidden></span>
+      <span id="stDictate" class="st-dictate" hidden></span>
+      <span class="spacer"></span>
+      <label class="st-zoom">🔍 <input type="range" id="zoom" min="50" max="200" step="10" value="100"> <span id="zoomVal">100%</span></label>
+    </footer>
+
+    <!-- Bul / değiştir -->
+    <div class="findbar" id="findbar" hidden>
+      <input type="text" id="findText" placeholder="Bul" aria-label="Bul">
+      <span id="findCount" class="find-count"></span>
+      <button id="findPrev" title="Önceki (Shift+Enter)">↑</button>
+      <button id="findNext" title="Sonraki (Enter)">↓</button>
+      <label class="chk"><input type="checkbox" id="findCase"> Aa</label>
+      <input type="text" id="replText" placeholder="Değiştir" aria-label="Değiştir">
+      <button id="replOne">Değiştir</button>
+      <button id="replAll">Tümü</button>
+      <button id="findClose" title="Kapat (Esc)">✕</button>
+    </div>
+
+    <!-- Eğik çizgi menüsü -->
+    <div class="slash-menu" id="slashMenu" hidden></div>
+    <!-- Görsel / tablo bağlam araçları -->
+    <div class="ctx-bar" id="ctxBar" hidden></div>
+  </main>
+
+  <div id="printArea" class="print-area"></div>
+  <div id="toast" class="toast" hidden></div>
+
+  <input type="file" id="fileImport" accept=".easywrite,.docx,.md,.markdown,.txt,.html,.htm,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/markdown,text/plain,text/html" hidden>
+  <input type="file" id="fileImage" accept="image/*" hidden>
+
+  <script src="../shared/convert.js"></script>
+  <script src="docx.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

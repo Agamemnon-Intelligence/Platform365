@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Present — Platform365</title>
+  <meta name="description" content="Platform365 Present — tarayıcıda çalışan, çevrimdışı kullanılabilen sunum hazırlama uygulaması.">
+  <meta name="theme-color" content="#4f46e5">
+  <link rel="manifest" href="../manifest.webmanifest">
+  <link rel="icon" href="../icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="../icons/icon-192.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Platform365">
+  <link rel="stylesheet" href="../shared/platform.css">
+  <link rel="stylesheet" href="styles.css">
+  <script src="../shared/platform.js" data-root="../"></script>
+</head>
+<body class="app-present">
+  <!-- Üst çubuk -->
+  <header class="topbar">
+    <button class="brand" id="btnHome" title="Dosyalarım">
+      <img src="../icons/icon.svg" alt="" width="28" height="28">
+      <span class="p365-name">Platform365</span><span class="p365-app">Present</span>
+    </button>
+    <div class="file-meta editor-only">
+      <input id="deckTitle" class="deck-title" value="Adsız sunum" aria-label="Sunum adı" spellcheck="false">
+      <span id="saveState" class="save-state">Kaydedildi</span>
+    </div>
+    <div class="spacer"></div>
+    <div class="top-actions">
+      <button class="btn ghost editor-only" id="btnUndo" title="Geri al (Ctrl+Z)">↶</button>
+      <button class="btn ghost editor-only" id="btnRedo" title="Yinele (Ctrl+Y)">↷</button>
+      <button class="btn ghost editor-only" id="btnPrint" title="Yazdır / PDF">🖨</button>
+      <button class="btn ghost editor-only" id="btnVersions" title="Sürüm geçmişi">🕘</button>
+      <div class="menu editor-only">
+        <button class="btn" id="btnTools" aria-haspopup="true">✨<span class="lbl"> Araçlar</span></button>
+        <div class="menu-list" id="toolsMenu" hidden>
+          <button data-tool="outline"><b>Metinden slayt oluştur</b><small>Ana hattı yapıştırın, slaytlar otomatik hazırlansın</small></button>
+          <button data-tool="from-doc"><b>EasyWrite belgesinden slayt</b><small>Belgenin başlıkları slayt olur</small></button>
+          <button data-tool="to-doc"><b>EasyWrite belgesine dönüştür</b><small>Slaytlar ve notlar düzenlenebilir belge olur</small></button>
+          <hr>
+          <button data-tool="check"><b>Sunum sağlık kontrolü</b><small>Kontrast, küçük yazı, kalabalık slayt, taşan öğe</small></button>
+          <button data-tool="emoji"><b>Emoji / ikon ekle</b><small>Slayta büyük emoji yerleştirir</small></button>
+          <button data-tool="rehearse"><b>Prova modu</b><small>Slayt başına süreyi ölçer, raporlar</small></button>
+          <button data-tool="snapshot"><b>Sürüm kaydet</b><small>Şimdiki hâlin adlandırılmış kopyası</small></button>
+          <hr>
+          <button data-tool="keys"><b>Klavye kısayolları</b><small>Düzenleyici ve sunum modu</small></button>
+        </div>
+      </div>
+      <div class="menu editor-only">
+        <button class="btn" id="btnDownload" aria-haspopup="true">⬇<span class="lbl"> İndir</span></button>
+        <div class="menu-list" id="downloadMenu" hidden>
+          <button data-export="present"><b>Present dosyası (.present)</b><small>Present'te kayıpsız açılır, PowerPoint ile de uyumludur</small></button>
+          <button data-export="pptx"><b>PowerPoint (.pptx)</b><small>Aynı dosya, .pptx uzantısıyla (PowerPoint, Keynote, Google Slaytlar)</small></button>
+          <button data-export="html"><b>Web sayfası (.html)</b><small>Tek dosya; her tarayıcıda programsız sunulur</small></button>
+          <button data-export="md"><b>Ana hat (.md)</b><small>Slayt başlıkları, maddeler ve notlar Markdown olarak</small></button>
+        </div>
+      </div>
+      <button class="btn primary editor-only" id="btnPresent" title="Sun (F5)">▶<span class="lbl"> Sun</span></button>
+      <button class="btn ghost" id="btnInstall" hidden title="Uygulamayı yükle">⤓ Yükle</button>
+    </div>
+  </header>
+
+  <!-- Ana sayfa: dosyalar -->
+  <main id="homeView" class="home">
+    <section class="home-hero">
+      <h1>Sunumlarınız</h1>
+      <p>Yeni bir sunum oluşturun ya da PowerPoint (.pptx) dosyanızı açın, düzenleyin ve .present olarak indirin. Dosyaları buraya sürükleyip bırakabilirsiniz. Her şey cihazınızda saklanır, çevrimdışı da çalışır.</p>
+      <div class="home-actions">
+        <button class="btn primary lg" id="btnNewDeck">＋ Yeni sunum</button>
+        <button class="btn lg" id="btnImport">📂 Dosya aç (.present, .pptx)</button>
+        <button class="btn lg" id="btnOutlineNew">✨ Metinden sunum</button>
+      </div>
+    </section>
+    <section>
+      <h2 class="section-title">Son dosyalar</h2>
+      <div id="deckGrid" class="deck-grid"></div>
+      <p id="emptyHint" class="empty-hint" hidden>Henüz sunum yok. “Yeni sunum” ile başlayın.</p>
+    </section>
+    <footer class="home-footer">Platform365 · Present <span class="app-version"></span></footer>
+  </main>
+
+  <!-- Düzenleyici -->
+  <main id="editorView" class="editor" hidden>
+    <aside class="slides-panel">
+      <div id="slideList" class="slide-list"></div>
+      <div class="add-slide">
+        <button class="btn block" id="btnAddSlide">＋ Slayt ekle</button>
+        <div class="layout-picker" id="layoutPicker" hidden>
+          <button data-layout="title">Başlık slaytı</button>
+          <button data-layout="content">Başlık ve içerik</button>
+          <button data-layout="section">Bölüm başlığı</button>
+          <button data-layout="two">İki sütun</button>
+          <button data-layout="blank">Boş</button>
+        </div>
+      </div>
+    </aside>
+
+    <section class="work">
+      <div class="toolbar">
+        <button class="tool" data-add="text" title="Metin kutusu">T<span>Metin</span></button>
+        <button class="tool" data-add="rect" title="Dikdörtgen">▭<span>Dikdörtgen</span></button>
+        <button class="tool" data-add="ellipse" title="Elips">◯<span>Elips</span></button>
+        <button class="tool" data-add="image" title="Görsel">🖼<span>Görsel</span></button>
+        <div class="menu">
+          <button class="tool" id="btnShapes" title="Diğer şekiller">⬟<span>Şekiller ▾</span></button>
+          <div class="menu-list shape-menu" id="shapeMenu" hidden></div>
+        </div>
+        <button class="tool" data-add="table" title="Tablo">▦<span>Tablo</span></button>
+        <button class="tool" data-add="emoji" title="Emoji / ikon">😀<span>Emoji</span></button>
+        <span class="tb-sep"></span>
+        <button class="tool" id="btnDupEl" title="Çoğalt (Ctrl+D)">⧉<span>Çoğalt</span></button>
+        <button class="tool" id="btnDelEl" title="Sil (Del)">🗑<span>Sil</span></button>
+      </div>
+      <div class="stage-wrap" id="stageWrap">
+        <div class="stage-scaler" id="stageScaler">
+          <div class="slide" id="stage"></div>
+        </div>
+      </div>
+      <div class="notes">
+        <textarea id="notes" placeholder="Konuşmacı notları…" rows="2"></textarea>
+      </div>
+    </section>
+
+    <aside class="props-panel" id="props"></aside>
+  </main>
+
+  <!-- Sunum modu -->
+  <div id="presenter" class="presenter" hidden>
+    <div class="presenter-scaler" id="presenterScaler"></div>
+    <canvas id="inkCanvas" class="ink-canvas"></canvas>
+    <div id="laserDot" class="laser-dot" hidden></div>
+    <div id="pCurtain" class="p-curtain" hidden></div>
+    <div id="pCaption" class="p-caption" hidden></div>
+    <div id="pOverview" class="p-overview" hidden></div>
+    <div id="pProgress" class="p-progress"><i></i></div>
+    <div class="presenter-bar">
+      <button id="pPrev" aria-label="Önceki" title="Önceki (←)">‹</button>
+      <span id="pCount">1 / 1</span>
+      <button id="pNext" aria-label="Sonraki" title="Sonraki (→)">›</button>
+      <span class="pb-sep"></span>
+      <button data-ptool="pen" title="Kalem (D)">✎</button>
+      <button data-ptool="hl" title="Vurgulayıcı (H)">🖍</button>
+      <button data-ptool="laser" title="Lazer işaretçi (L)">●</button>
+      <button data-ptool="zoom" title="Büyüteç (Z)">🔍</button>
+      <button data-pact="clear" title="Çizimleri temizle (E)">⌫</button>
+      <button data-pact="black" title="Siyah ekran (B)">◼</button>
+      <button data-pact="grid" title="Slayt ızgarası (G)">▦</button>
+      <button data-pact="cc" title="Canlı altyazı (C)">CC</button>
+      <span id="pTimer" class="p-timer" title="Geçen süre (T: sıfırla)">00:00</span>
+      <button id="pExit" aria-label="Çık" title="Çık (Esc)">✕</button>
+    </div>
+  </div>
+
+  <!-- Yazdırma alanı -->
+  <div id="printArea" class="print-area"></div>
+
+  <div id="toast" class="toast" hidden></div>
+
+  <input type="file" id="fileImport" accept=".present,.pptx,.json,application/json,application/vnd.openxmlformats-officedocument.presentationml.presentation" hidden>
+  <input type="file" id="fileImage" accept="image/*" hidden>
+
+  <script src="shapes.js"></script>
+  <script src="../shared/convert.js"></script>
+  <script src="pptx-import.js"></script>
+  <script src="pptx-export.js"></script>
+  <script src="app.js"></script>
+  <script src="features.js"></script>
+</body>
+</html>

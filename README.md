@@ -1,6 +1,20 @@
 # Platform365
 
-**Sürüm 2.0.0** — Tarayıcıda çalışan, yüklenebilir (PWA) ve çevrimdışı kullanılabilen ofis paketi. İki uygulamayı tek çatıda birleştirir:
+**Sürüm 2.1.0** — **Windows ve macOS** için masaüstü uygulaması olarak indirilebilen, ayrıca tarayıcıda da çalışan çevrimdışı ofis paketi. İki uygulamayı tek çatıda birleştirir:
+
+## İndir
+
+| Platform | Dosya |
+| --- | --- |
+| **Windows** (10/11, x64) | [Platform365-Setup.exe](https://github.com/Agamemnon-Intelligence/Platform365/releases/latest/download/Platform365-Setup.exe) |
+| **macOS** (Intel + Apple Silicon) | [Platform365-macOS.dmg](https://github.com/Agamemnon-Intelligence/Platform365/releases/latest/download/Platform365-macOS.dmg) |
+
+Tüm sürümler: [Releases](https://github.com/Agamemnon-Intelligence/Platform365/releases). Web sürümü ilk açıldığında bu indirme seçeneklerini gösterir; sonradan sağ üstteki **⤓ İndir** düğmesiyle yeniden açılır.
+
+> macOS uygulaması imzasız olduğundan ilk açılışta Finder'da Platform365'e sağ tıklayıp **Aç**'ı seçin. Windows SmartScreen uyarısında **Ek bilgi → Yine de çalıştır**'a tıklayın.
+
+Masaüstü uygulaması .pptx, .present, .docx, .easywrite ve .md dosyalarıyla ilişkilendirilir; bu dosyalar çift tıklanınca doğru uygulamada açılır.
+
 
 | Uygulama | Ne yapar | Uyumluluk |
 | --- | --- | --- |
@@ -112,17 +126,25 @@ shared/convert.js             Markdown ⇄ HTML, güvenli HTML temizleme, belge/
 present/                      Present: index.html, app.js (düzenleyici), features.js (Platform365 eklentileri),
                               shapes.js, pptx-import.js, pptx-export.js, styles.css
 easywrite/                    EasyWrite: index.html, app.js (düzenleyici), docx.js (Word okuma/yazma), styles.css
-sw.js                         Service worker (tüm platform için çevrimdışı önbellek)
-manifest.webmanifest          PWA bildirimi (dosya ilişkilendirmeleri: .present, .pptx, .easywrite, .docx, .md)
+desktop/                      Masaüstü uygulaması (Electron): main.js (pencere, menü, app:// sunucusu, dosya açma),
+                              preload.js (sayfaya window.p365Desktop köprüsü)
+build/icon.png                Masaüstü uygulama ikonu (Windows .ico ve macOS .icns bundan üretilir)
+.github/workflows/release.yml Windows .exe + macOS .dmg derleyip GitHub Releases'a yükler
 icons/                        Uygulama ikonları
 vendor/                       PptxGenJS 3.12.0 (MIT, JSZip içerir)
 ```
 
-Çalıştırmak için herhangi bir statik sunucu yeterlidir (ör. `npm start` → http://localhost:8080). Eski Present adresleri (`/#/d/…`) otomatik olarak `present/` altına yönlendirilir; mevcut sunumlar aynı tarayıcı deposunda kaldığı için kaybolmaz.
+Geliştirme: `npm install`, ardından `npm start` masaüstü uygulamasını açar; `npm run web` web sürümünü http://localhost:8080 adresinde sunar. Yerel paket: `npm run dist:win` (Windows'ta) veya `npm run dist:mac` (macOS'ta) → `dist/`. Eski Present adresleri (`/#/d/…`) otomatik olarak `present/` altına yönlendirilir; mevcut sunumlar aynı tarayıcı deposunda kaldığı için kaybolmaz.
 
 ## Sürüm güncelleme
 
-Yeni sürümde `present/app.js` ve `easywrite/app.js` içindeki `APP_VERSION`, `shared/platform.js` içindeki `VERSION`, `sw.js` içindeki `VERSION` (ve dosyalar her değiştiğinde `BUILD`), `manifest.webmanifest` ve `package.json` sürümlerini birlikte güncelleyin.
+Yeni sürümde `present/app.js` ve `easywrite/app.js` içindeki `APP_VERSION`, `shared/platform.js` içindeki `VERSION` ve `package.json` sürümlerini birlikte güncelleyin. Ardından etiketi gönderin:
+
+```
+git tag v2.1.0 && git push origin v2.1.0
+```
+
+**Release** iş akışı Windows ve macOS'ta derleyip `Platform365-Setup.exe`, `Platform365-macOS.dmg` ve `.zip` dosyalarını aynı adlı GitHub sürümüne yükler (Actions sekmesinden elle de çalıştırılabilir). Dosya adları sabit olduğundan `releases/latest/download/…` bağlantıları her zaman en yeni sürümü indirir.
 
 ## Lisans
 

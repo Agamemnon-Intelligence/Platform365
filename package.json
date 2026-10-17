@@ -1,10 +1,119 @@
 {
   "name": "platform365",
-  "version": "2.0.0",
-  "description": "Platform365 — Present (sunum) ve EasyWrite (belge) uygulamalarını birleştiren, tarayıcıda çalışan çevrimdışı (PWA) ofis paketi",
+  "productName": "Platform365",
+  "version": "2.1.0",
+  "description": "Platform365 — Present (sunum) ve EasyWrite (belge) uygulamalarını birleştiren, Windows ve macOS için çevrimdışı ofis paketi",
+  "author": "Agamemnon Intelligence",
+  "homepage": "https://github.com/Agamemnon-Intelligence/Platform365",
   "private": true,
   "license": "MIT",
+  "main": "desktop/main.js",
   "scripts": {
-    "start": "python3 -m http.server 8080"
+    "start": "electron .",
+    "web": "python3 -m http.server 8080",
+    "dist:win": "electron-builder --win --publish never",
+    "dist:mac": "electron-builder --mac --publish never"
+  },
+  "devDependencies": {
+    "electron": "^33.2.1",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.agamemnon.platform365",
+    "productName": "Platform365",
+    "copyright": "MIT",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "index.html",
+      "hub.css",
+      "hub.js",
+      "desktop/**",
+      "shared/**",
+      "present/**",
+      "easywrite/**",
+      "vendor/**",
+      "icons/**",
+      "package.json",
+      "LICENSE",
+      "build/icon.png"
+    ],
+    "icon": "build/icon.png",
+    "fileAssociations": [
+      {
+        "ext": "present",
+        "name": "Present sunumu",
+        "role": "Editor"
+      },
+      {
+        "ext": "pptx",
+        "name": "PowerPoint sunumu",
+        "role": "Editor"
+      },
+      {
+        "ext": "easywrite",
+        "name": "EasyWrite belgesi",
+        "role": "Editor"
+      },
+      {
+        "ext": "docx",
+        "name": "Word belgesi",
+        "role": "Editor"
+      },
+      {
+        "ext": [
+          "md",
+          "markdown"
+        ],
+        "name": "Markdown",
+        "role": "Editor"
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Platform365",
+      "artifactName": "Platform365-Setup.${ext}"
+    },
+    "mac": {
+      "category": "public.app-category.productivity",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "universal"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "universal"
+          ]
+        }
+      ],
+      "identity": null,
+      "hardenedRuntime": false,
+      "extendInfo": {
+        "NSMicrophoneUsageDescription": "Dikte ve canlı altyazı için mikrofon kullanılır."
+      }
+    },
+    "dmg": {
+      "artifactName": "Platform365-macOS.${ext}"
+    }
   }
 }

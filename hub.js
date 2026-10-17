@@ -167,13 +167,7 @@
     $('#btnPalette').addEventListener('click', P.openPalette);
     $('#btnTheme').addEventListener('click', P.cycleTheme);
 
-    let deferred = null;
-    const btn = $('#btnInstall');
-    window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferred = e; btn.hidden = false; });
-    btn.addEventListener('click', async () => { if (!deferred) return; deferred.prompt(); await deferred.userChoice; deferred = null; btn.hidden = true; });
-    window.addEventListener('appinstalled', () => { btn.hidden = true; P.toast('Platform365 yüklendi!'); });
-    P.registerSw();
-    if ('launchQueue' in window) window.launchQueue.setConsumer(async (params) => { for (const f of params.files || []) openFile(await f.getFile()); });
+    P.initApp({ onFile: openFile });
 
     P.registerCommands([
       { id: 'new-deck', group: 'Present', title: 'Yeni sunum', run: () => { location.href = 'present/#/new'; } },

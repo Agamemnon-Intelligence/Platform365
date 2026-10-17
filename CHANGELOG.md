@@ -1,5 +1,12 @@
 # Değişiklik Günlüğü
 
+## 2.1.0 — 2026-10-17 — Masaüstü uygulaması
+
+- **Windows (.exe) ve macOS (.dmg) masaüstü uygulaması** (Electron): kendi penceresi, Türkçe menü, çevrimdışı çalışma, .pptx / .present / .docx / .easywrite / .md dosya ilişkilendirmeleri (çift tıklayınca doğru uygulamada açılır), tek pencere
+- **GitHub Releases:** `v*` etiketiyle Windows ve macOS paketleri otomatik derlenip yayımlanır
+- **Web sürümü:** ilk açılışta masaüstü uygulamasını indirme penceresi; “⤓ İndir” düğmesi her zaman erişilebilir
+- PWA (service worker ve web uygulaması bildirimi) kaldırıldı; önceki sürümden kalan önbellek otomatik temizlenir
+
 ## 2.0.0 — 2026-10-16 — Platform365
 
 Present ve EasyWrite tek pakette birleşti: **Platform365**.

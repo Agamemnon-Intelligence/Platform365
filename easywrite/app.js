@@ -1,7 +1,7 @@
-/* Platform365 EasyWrite 2.0.0 — tarayıcı tabanlı kelime işlemci */
+/* Platform365 EasyWrite 2.1.0 — tarayıcı tabanlı kelime işlemci */
 'use strict';
 
-const APP_VERSION = '2.0.0';
+const APP_VERSION = '2.1.0';
 const FILE_FORMAT = 'easywrite';
 const P = window.P365;
 const C = window.Convert;
@@ -1891,25 +1891,12 @@ function onKey(e) {
 }
 
 /* ------------------------------------------------------------------ */
-/* PWA ve başlat                                                       */
+/* Masaüstü / indirme ve başlat                                        */
 /* ------------------------------------------------------------------ */
 
-function setupPwa() {
-  let deferred = null;
-  const btn = $('#btnInstall');
-  window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferred = e; btn.hidden = false; });
-  btn.addEventListener('click', async () => {
-    if (!deferred) return;
-    deferred.prompt();
-    await deferred.userChoice;
-    deferred = null;
-    btn.hidden = true;
-  });
-  window.addEventListener('appinstalled', () => { btn.hidden = true; P.toast('Platform365 yüklendi!'); });
-  P.registerSw(async () => { if (doc) await saveNow(); });
-  if ('launchQueue' in window) {
-    window.launchQueue.setConsumer(async (params) => { for (const h of params.files || []) importFile(await h.getFile()); });
-  }
+function setupApp() {
+  // Masaüstü uygulamasında çift tıklanan .docx / .easywrite / .md dosyalarını aç
+  P.initApp({ onFile: importFile });
 }
 
 (async function init() {
@@ -1917,6 +1904,6 @@ function setupPwa() {
   await Store.open();
   renderTemplates();
   bindEvents();
-  setupPwa();
+  setupApp();
   await route();
 })();

@@ -224,3 +224,9 @@ kbd {
 @media print {
   .p365-backdrop, .toast { display: none !important; }
 }
+
+/* Masaüstü indirme penceresi */
+.p365-download { display: grid; justify-items: center; gap: 12px; text-align: center; }
+.p365-download p { margin: 0; line-height: 1.5; }
+.p365-dl-buttons { display: grid; gap: 8px; width: 100%; max-width: 340px; }
+.p365-dl-buttons .btn { justify-content: center; text-decoration: none; }

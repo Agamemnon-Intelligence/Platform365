@@ -1,0 +1,79 @@
+name: Release (Windows .exe + macOS .dmg)
+
+# v* etiketi gönderildiğinde (ör. git tag v2.1.0 && git push origin v2.1.0) ya da
+# Actions sekmesinden elle çalıştırıldığında masaüstü uygulamalarını derler ve
+# GitHub Releases'a yükler.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Sürüm etiketi (boş bırakılırsa package.json sürümü: v<sürüm>)'
+        required: false
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            target: --win
+          - os: macos-latest
+            target: --mac
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Derle
+        run: npx electron-builder ${{ matrix.target }} --publish never
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist-${{ matrix.os }}
+          path: |
+            dist/*.exe
+            dist/*.dmg
+            dist/*.zip
+          if-no-files-found: error
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Etiketi belirle
+        id: tag
+        shell: bash
+        run: |
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then t="${GITHUB_REF_NAME}";
+          elif [ -n "${{ inputs.tag }}" ]; then t="${{ inputs.tag }}";
+          else t="v$(node -p "require('./package.json').version")"; fi
+          echo "tag=$t" >> "$GITHUB_OUTPUT"
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag.outputs.tag }}
+          name: Platform365 ${{ steps.tag.outputs.tag }}
+          target_commitish: ${{ github.sha }}
+          make_latest: true
+          body: |
+            ## İndir
+            - **Windows:** `Platform365-Setup.exe` — çift tıklayıp kurun.
+            - **macOS:** `Platform365-macOS.dmg` — açın, Platform365'i Uygulamalar klasörüne sürükleyin. İlk açılışta uygulamaya sağ tıklayıp **Aç**'ı seçin (imzasız uygulama).
+
+            Değişiklikler için [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/${{ github.sha }}/CHANGELOG.md).
+          files: dist/*
+          fail_on_unmatched_files: true

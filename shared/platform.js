@@ -5,7 +5,7 @@
 
 (function () {
   const ROOT = (document.currentScript && document.currentScript.dataset.root) || './';
-  const VERSION = '2.0.0';
+  const VERSION = '2.1.0';
   const NAME = 'Platform365';
 
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -363,25 +363,63 @@
     return { stop() { stopped = true; try { r.stop(); } catch (e) { /* zaten durdu */ } } };
   }
 
-  /** Service worker kaydı (tüm platform tek önbellek) */
-  function registerSw(beforeReload) {
-    if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
-    const hadController = !!navigator.serviceWorker.controller;
-    let reloading = false;
-    navigator.serviceWorker.addEventListener('controllerchange', async () => {
-      if (!hadController || reloading) return;
-      reloading = true;
-      if (beforeReload) await beforeReload();
-      location.reload();
+  /* ---------------- Masaüstü uygulaması / indirme ---------------- */
+  const REPO = 'Agamemnon-Intelligence/Platform365';
+  const RELEASES = `https://github.com/${REPO}/releases/latest`;
+  const DOWNLOADS = {
+    win: { label: 'Windows için indir (.exe)', url: `${RELEASES}/download/Platform365-Setup.exe` },
+    mac: { label: 'macOS için indir (.dmg)', url: `${RELEASES}/download/Platform365-macOS.dmg` },
+  };
+  const DL_KEY = 'p365-download-seen';
+  /** Electron içinde çalışıyorsa önyükleme betiğinin sunduğu köprü, aksi halde null */
+  const desktop = window.p365Desktop || null;
+  const userOs = () => {
+    const p = ((navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || navigator.userAgent || '').toLowerCase();
+    return /mac|iphone|ipad/.test(p) ? 'mac' : /win/.test(p) ? 'win' : '';
+  };
+
+  /** Masaüstü sürümünü indirme penceresi (Windows .exe / macOS .dmg) */
+  function showDownload() {
+    const os = userOs();
+    const order = os === 'mac' ? ['mac', 'win'] : ['win', 'mac'];
+    return dialog({
+      title: 'Platform365\'i indirin',
+      html: `<div class="p365-download">
+        <img src="${ROOT}icons/platform365.svg" alt="" width="64" height="64">
+        <p><b>Platform365 masaüstü uygulaması</b> Windows ve macOS'ta çalışır: çevrimdışı, kendi penceresinde ve .pptx / .docx / .present / .easywrite dosyalarını çift tıklayarak açar.</p>
+        <div class="p365-dl-buttons">${order.map((k, i) => `<a class="btn lg${i === 0 && os ? ' primary' : ''}" href="${DOWNLOADS[k].url}" data-dl>${DOWNLOADS[k].label}</a>`).join('')}</div>
+        <p class="muted">Tüm sürümler: <a href="${RELEASES}" target="_blank" rel="noopener">GitHub Releases</a></p>
+      </div>`,
+      actions: [{ label: 'Tarayıcıda devam et', value: null }],
+      onOpen: (body, close) => body.querySelectorAll('[data-dl]').forEach((a) => a.addEventListener('click', () => setTimeout(() => close('download'), 300))),
     });
-    navigator.serviceWorker.register(`${ROOT}sw.js`, { scope: ROOT, updateViaCache: 'none' })
-      .then((reg) => reg.update())
-      .catch((e) => console.warn('Service worker kaydedilemedi', e));
+  }
+
+  /**
+   * Uygulama başlangıcı: eski PWA önbelleğini temizler, web'de ilk açılışta indirme
+   * penceresini gösterir, masaüstünde işletim sisteminden açılan dosyaları onFile'a iletir.
+   */
+  function initApp({ onFile } = {}) {
+    // Önceki PWA sürümünden kalan service worker ve önbellekleri kaldır
+    if ('serviceWorker' in navigator) navigator.serviceWorker.getRegistrations().then((rs) => rs.forEach((r) => r.unregister())).catch(() => {});
+    if (window.caches) caches.keys().then((ks) => ks.filter((k) => /^(present|platform365)-/.test(k)).forEach((k) => caches.delete(k))).catch(() => {});
+
+    const btn = document.getElementById('btnInstall');
+    if (desktop) {
+      document.documentElement.classList.add('p365-desktop', `p365-${desktop.platform}`);
+      if (btn) btn.remove();
+      if (onFile) desktop.onOpenFile((f) => onFile(new File([f.data], f.name)));
+      return;
+    }
+    if (btn) { btn.hidden = false; btn.addEventListener('click', showDownload); }
+    let seen = false;
+    try { seen = !!localStorage.getItem(DL_KEY); localStorage.setItem(DL_KEY, '1'); } catch (e) { /* özel pencere */ }
+    if (!seen && location.protocol !== 'file:') showDownload();
   }
 
   window.P365 = {
     NAME, VERSION, ROOT, APPS_DB, esc, uid, toast, dialog, prompt, hasDialog,
     registerCommands, openPalette, mountSwitcher, setTheme, cycleTheme, readTheme,
-    inbox, snapshots, appStore, safeName, download, loadZip, relTime, EMOJI, pickEmoji, speech, registerSw,
+    inbox, snapshots, appStore, safeName, download, loadZip, relTime, EMOJI, pickEmoji, speech, desktop, showDownload, initApp,
   };
 })();

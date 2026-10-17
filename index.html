@@ -4,13 +4,10 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Platform365</title>
-  <meta name="description" content="Platform365 — Present (sunum) ve EasyWrite (belge) uygulamalarını tek çatıda birleştiren, tarayıcıda ve çevrimdışı çalışan ofis paketi.">
+  <meta name="description" content="Platform365 — Present (sunum) ve EasyWrite (belge) uygulamalarını tek çatıda birleştiren, Windows, macOS ve tarayıcıda çevrimdışı çalışan ofis paketi.">
   <meta name="theme-color" content="#e11d48">
-  <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/platform365.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="Platform365">
   <script>
     // Eski Present bağlantılarını (#/d/…, #/new) yeni adrese yönlendir
     if (/^#\/(d\/|new)/.test(location.hash)) location.replace('present/' + location.hash);
@@ -29,7 +26,7 @@
     <div class="top-actions">
       <button class="btn ghost" id="btnPalette" title="Komut paleti (Ctrl+K)">⌘</button>
       <button class="btn ghost" id="btnTheme" title="Tema: sistem / aydınlık / karanlık">◐</button>
-      <button class="btn ghost" id="btnInstall" hidden title="Uygulamayı yükle">⤓ Yükle</button>
+      <button class="btn ghost" id="btnInstall" hidden title="Masaüstü uygulamasını indir (Windows / macOS)">⤓ İndir</button>
     </div>
   </header>
 

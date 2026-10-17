@@ -1,7 +1,7 @@
-/* Platform365 Present 2.0.0 — tarayıcı tabanlı sunum uygulaması */
+/* Platform365 Present 2.1.0 — tarayıcı tabanlı sunum uygulaması */
 'use strict';
 
-const APP_VERSION = '2.0.0';
+const APP_VERSION = '2.1.0';
 const FILE_FORMAT = 'present';
 const W = 960;
 let H = 540; // slayt yüksekliği; açık sunumun en-boy oranına göre değişir (16:9 = 540, 4:3 = 720)
@@ -1852,35 +1852,12 @@ function onKey(e) {
 }
 
 /* ------------------------------------------------------------------ */
-/* PWA                                                                 */
+/* Masaüstü / indirme                                                  */
 /* ------------------------------------------------------------------ */
 
-function setupPwa() {
-  let deferred = null;
-  const btn = $('#btnInstall');
-  window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault();
-    deferred = e;
-    btn.hidden = false;
-  });
-  btn.addEventListener('click', async () => {
-    if (!deferred) return;
-    deferred.prompt();
-    await deferred.userChoice;
-    deferred = null;
-    btn.hidden = true;
-  });
-  window.addEventListener('appinstalled', () => { btn.hidden = true; toast('Platform365 yüklendi!'); });
-
-  // Yeni service worker devraldığında güncel kodla bir kez yeniden yükle
-  P365.registerSw(async () => { if (deck) await saveNow(); });
-
-  // Yüklü uygulamada .present dosyası ile açma
-  if ('launchQueue' in window) {
-    window.launchQueue.setConsumer(async (params) => {
-      for (const h of params.files || []) importFile(await h.getFile());
-    });
-  }
+function setupApp() {
+  // Masaüstü uygulamasında çift tıklanan .present / .pptx dosyalarını aç
+  P365.initApp({ onFile: importFile });
 }
 
 /* ------------------------------------------------------------------ */
@@ -1894,6 +1871,6 @@ function setupPwa() {
   await Store.open();
   bindEvents();
   Fx.init();
-  setupPwa();
+  setupApp();
   await route();
 })();

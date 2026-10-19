@@ -10,6 +10,7 @@
   <link rel="apple-touch-icon" href="../icons/icon-192.png">
   <link rel="stylesheet" href="../shared/platform.css">
   <link rel="stylesheet" href="styles.css">
+  <script src="../shared/i18n.js"></script>
   <script src="../shared/platform.js" data-root="../"></script>
 </head>
 <body class="app-present">
@@ -111,7 +112,7 @@
       </div>
       <div class="stage-wrap" id="stageWrap">
         <div class="stage-scaler" id="stageScaler">
-          <div class="slide" id="stage"></div>
+          <div class="slide" id="stage" translate="no"></div>
         </div>
       </div>
       <div class="notes">
@@ -124,11 +125,11 @@
 
   <!-- Sunum modu -->
   <div id="presenter" class="presenter" hidden>
-    <div class="presenter-scaler" id="presenterScaler"></div>
+    <div class="presenter-scaler" id="presenterScaler" translate="no"></div>
     <canvas id="inkCanvas" class="ink-canvas"></canvas>
     <div id="laserDot" class="laser-dot" hidden></div>
     <div id="pCurtain" class="p-curtain" hidden></div>
-    <div id="pCaption" class="p-caption" hidden></div>
+    <div id="pCaption" class="p-caption" translate="no" hidden></div>
     <div id="pOverview" class="p-overview" hidden></div>
     <div id="pProgress" class="p-progress"><i></i></div>
     <div class="presenter-bar">
@@ -150,7 +151,7 @@
   </div>
 
   <!-- Yazdırma alanı -->
-  <div id="printArea" class="print-area"></div>
+  <div id="printArea" class="print-area" translate="no"></div>
 
   <div id="toast" class="toast" hidden></div>
 

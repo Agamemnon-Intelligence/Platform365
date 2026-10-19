@@ -259,7 +259,7 @@ const Docx = (() => {
           else x += para(null, '', { border: 'bottom' });
         } else if (t === 'DIV' && c.dataset.callout) x += blocks(c, { ...ctx, callout: c.dataset.callout });
         else if (t === 'NAV' && c.dataset.toc !== undefined) {
-          x += para(null, textRun('İçindekiler', { bold: true }), { style: 'TOCHeading' });
+          x += para(null, textRun(P365.t('İçindekiler'), { bold: true }), { style: 'TOCHeading' });
           c.querySelectorAll('a').forEach((a) => { x += para(null, textRun(a.textContent, {}), { indent: (+(a.dataset.lvl || 1) - 1) * 360 }); });
         } else x += blocks(c, ctx);
       }
@@ -276,7 +276,7 @@ const Docx = (() => {
     const half = Math.round(baseSize * 1.5);
     const hd = (id, name, size, color, extra = '') => `<w:style w:type="paragraph" w:styleId="${id}"><w:name w:val="${name}"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:uiPriority w:val="9"/><w:qFormat/><w:pPr><w:keepNext/><w:spacing w:before="240" w:after="80"/><w:outlineLvl w:val="${+id.slice(-1) - 1}"/>${extra}</w:pPr><w:rPr><w:b/><w:color w:val="${color}"/><w:sz w:val="${size}"/><w:szCs w:val="${size}"/></w:rPr></w:style>`;
     zip.file('word/styles.xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<w:styles xmlns:w="${W_NS}"><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="${xe(baseFont)}" w:hAnsi="${xe(baseFont)}" w:cs="${xe(baseFont)}" w:eastAsia="${xe(baseFont)}"/><w:sz w:val="${half}"/><w:szCs w:val="${half}"/><w:lang w:val="tr-TR"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:after="120" w:line="276" w:lineRule="auto"/></w:pPr></w:pPrDefault></w:docDefaults>
+<w:styles xmlns:w="${W_NS}"><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="${xe(baseFont)}" w:hAnsi="${xe(baseFont)}" w:cs="${xe(baseFont)}" w:eastAsia="${xe(baseFont)}"/><w:sz w:val="${half}"/><w:szCs w:val="${half}"/><w:lang w:val="${P365.locale}"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:after="120" w:line="276" w:lineRule="auto"/></w:pPr></w:pPrDefault></w:docDefaults>
 <w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/><w:qFormat/></w:style>
 ${hd('Heading1', 'heading 1', Math.round(half * 2), '1F2937')}${hd('Heading2', 'heading 2', Math.round(half * 1.6), '1F2937')}${hd('Heading3', 'heading 3', Math.round(half * 1.3), '374151')}${hd('Heading4', 'heading 4', Math.round(half * 1.1), '374151')}
 <w:style w:type="paragraph" w:styleId="Quote"><w:name w:val="Quote"/><w:basedOn w:val="Normal"/><w:qFormat/><w:pPr><w:pBdr><w:left w:val="single" w:sz="18" w:space="8" w:color="A0A4B0"/></w:pBdr><w:ind w:left="360"/></w:pPr><w:rPr><w:i/><w:color w:val="4B5563"/></w:rPr></w:style>

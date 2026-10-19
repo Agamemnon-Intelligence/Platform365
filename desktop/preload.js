@@ -10,4 +10,8 @@ contextBridge.exposeInMainWorld('p365Desktop', {
     ipcRenderer.on('p365:open-file', (e, f) => cb(f));
     ipcRenderer.invoke('p365:ready').then((files) => files.forEach(cb));
   },
+  /** Menüleri arayüz diline göre yeniden kurar ('tr' | 'en') */
+  setLanguage(lang) { ipcRenderer.send('p365:lang', lang); },
+  /** Uygulama menüsünden gelen komutlar: 'about', 'lang-tr', 'lang-en' */
+  onMenu(cb) { ipcRenderer.on('p365:menu', (e, cmd) => cb(cmd)); },
 });

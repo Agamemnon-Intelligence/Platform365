@@ -1,6 +1,6 @@
 # Platform365
 
-**Sürüm 2.1.0** — **Windows ve macOS** için masaüstü uygulaması olarak indirilebilen, ayrıca tarayıcıda da çalışan çevrimdışı ofis paketi. İki uygulamayı tek çatıda birleştirir:
+**Sürüm 3.0.0** — **Windows ve macOS** için masaüstü uygulaması olarak indirilebilen, ayrıca tarayıcıda da çalışan çevrimdışı ofis paketi. İki uygulamayı tek çatıda birleştirir:
 
 ## İndir
 
@@ -20,6 +20,8 @@ Masaüstü uygulaması .pptx, .present, .docx, .easywrite ve .md dosyalarıyla i
 | --- | --- | --- |
 | **Present** | Sunum hazırlama ve sunma | PowerPoint (.pptx), kendi biçimi .present |
 | **EasyWrite** | Belge / kelime işlemci | Word (.docx), kendi biçimi .easywrite, Markdown, HTML, TXT |
+
+**Arayüz dili:** Türkçe veya İngilizce (English). İlk açılışta sorulur; sonradan uygulama değiştiriciden (▦), ana ekrandaki 🌐 düğmesinden, Ctrl+K komut paletinden ya da masaüstü uygulamasında **Görünüm → Dil** menüsünden değiştirilir. Platform365 hakkında bilgisi (sürüm, lisans, bağlantılar) ana ekranın alt kısmında ve ▦ menüsünde yer alır.
 
 Kök adres **Platform365 ana ekranıdır**: iki uygulamanın son dosyaları tek listede, içerikte arama, dosya bırakınca doğru uygulamada açma, tam yedekleme. Sağ üstteki ▦ düğmesiyle (uygulama değiştirici) uygulamalar arasında geçilir; **Ctrl+K** her yerde komut paletini açar. Hesap, sunucu ya da bulut yoktur — her şey cihazda (IndexedDB) saklanır.
 
@@ -119,6 +121,7 @@ Slayt içeriği PowerPoint'in beklediği yapıda (Office Open XML) doğrudan yaz
 
 ```
 index.html, hub.js, hub.css   Platform365 ana ekranı
+shared/i18n.js                Dil desteği: Türkçe → İngilizce sözlüğü, arayüzün otomatik çevirisi
 shared/platform.js            Ortak çekirdek: tema, uygulama değiştirici, komut paleti, iletişim kutuları,
                               uygulamalar arası gelen kutusu, sürüm geçmişi, konuşma tanıma
 shared/platform.css           Ortak stiller ve renk değişkenleri (aydınlık / karanlık)
@@ -141,10 +144,14 @@ Geliştirme: `npm install`, ardından `npm start` masaüstü uygulamasını aça
 Yeni sürümde `present/app.js` ve `easywrite/app.js` içindeki `APP_VERSION`, `shared/platform.js` içindeki `VERSION` ve `package.json` sürümlerini birlikte güncelleyin. Ardından etiketi gönderin:
 
 ```
-git tag v2.1.0 && git push origin v2.1.0
+git tag v3.0.0 && git push origin v3.0.0
 ```
 
 **Release** iş akışı Windows ve macOS'ta derleyip `Platform365-Setup.exe`, `Platform365-macOS.dmg` ve `.zip` dosyalarını aynı adlı GitHub sürümüne yükler (Actions sekmesinden elle de çalıştırılabilir). Dosya adları sabit olduğundan `releases/latest/download/…` bağlantıları her zaman en yeni sürümü indirir.
+
+## Çeviri (Türkçe / English)
+
+Yeni bir arayüz metni eklerken Türkçe metni kaynak olarak yazın ve İngilizce karşılığını `shared/i18n.js` içindeki `EN` sözlüğüne ekleyin. Statik HTML'deki ve sonradan eklenen arayüz metinleri otomatik çevrilir; değişken içeren metinler için `P365.t('{n} slayt', { n })`, uzun veya biçimli metinler için `P365.L('Türkçe', 'English')` kullanın. Kullanıcı içeriği taşıyan kapsayıcılara `translate="no"` verin.
 
 ## Lisans
 

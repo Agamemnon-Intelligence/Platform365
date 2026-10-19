@@ -10,6 +10,7 @@
   <link rel="apple-touch-icon" href="../icons/icon-192.png">
   <link rel="stylesheet" href="../shared/platform.css">
   <link rel="stylesheet" href="styles.css">
+  <script src="../shared/i18n.js"></script>
   <script src="../shared/platform.js" data-root="../"></script>
 </head>
 <body class="app-easywrite">
@@ -114,10 +115,10 @@
         <option>18</option><option>20</option><option>24</option><option>28</option><option>36</option><option>48</option><option>72</option>
       </select>
       <span class="rb-sep"></span>
-      <button data-cmd="bold" title="Kalın (Ctrl+B)"><b>K</b></button>
-      <button data-cmd="italic" title="İtalik (Ctrl+I)"><i>İ</i></button>
-      <button data-cmd="underline" title="Altı çizili (Ctrl+U)"><u>A</u></button>
-      <button data-cmd="strikeThrough" title="Üstü çizili"><s>Ü</s></button>
+      <button data-cmd="bold" title="Kalın (Ctrl+B)"><b data-en="B">K</b></button>
+      <button data-cmd="italic" title="İtalik (Ctrl+I)"><i data-en="I">İ</i></button>
+      <button data-cmd="underline" title="Altı çizili (Ctrl+U)"><u data-en="U">A</u></button>
+      <button data-cmd="strikeThrough" title="Üstü çizili"><s data-en="S">Ü</s></button>
       <button data-cmd="superscript" title="Üst simge">x²</button>
       <button data-cmd="subscript" title="Alt simge">x₂</button>
       <label class="rb-color" title="Yazı rengi"><span>A</span><input type="color" id="foreColor" value="#dc2626"></label>
@@ -155,7 +156,7 @@
     <div class="ed-body">
       <aside class="outline-panel" id="outlinePanel">
         <h3>Ana hat</h3>
-        <nav id="outline" class="outline"></nav>
+        <nav id="outline" class="outline" translate="no"></nav>
       </aside>
       <div class="page-wrap" id="pageWrap">
         <div class="page-zoom" id="pageZoom">
@@ -198,7 +199,7 @@
     <div class="ctx-bar" id="ctxBar" hidden></div>
   </main>
 
-  <div id="printArea" class="print-area"></div>
+  <div id="printArea" class="print-area" translate="no"></div>
   <div id="toast" class="toast" hidden></div>
 
   <input type="file" id="fileImport" accept=".easywrite,.docx,.md,.markdown,.txt,.html,.htm,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/markdown,text/plain,text/html" hidden>

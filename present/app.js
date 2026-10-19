@@ -1,7 +1,8 @@
-/* Platform365 Present 2.1.0 — tarayıcı tabanlı sunum uygulaması */
+/* Platform365 Present 3.0.0 — tarayıcı tabanlı sunum uygulaması */
 'use strict';
 
-const APP_VERSION = '2.1.0';
+const APP_VERSION = '3.0.0';
+const { t: T, L } = window.P365;
 const FILE_FORMAT = 'present';
 const W = 960;
 let H = 540; // slayt yüksekliği; açık sunumun en-boy oranına göre değişir (16:9 = 540, 4:3 = 720)
@@ -45,25 +46,25 @@ function makeSlide(layout, t) {
   const els = [];
   switch (layout) {
     case 'title':
-      els.push(textEl(t, { x: 80, y: 130, w: 800, h: 140, text: 'Sunum başlığı', fontSize: 60, bold: true, align: 'center', valign: 'bottom' }));
+      els.push(textEl(t, { x: 80, y: 130, w: 800, h: 140, text: T('Sunum başlığı'), fontSize: 60, bold: true, align: 'center', valign: 'bottom' }));
       els.push(shapeEl('rect', t, { x: 420, y: 290, w: 120, h: 6 }));
-      els.push(textEl(t, { x: 80, y: 315, w: 800, h: 70, text: 'Alt başlık', fontSize: 26, align: 'center' }));
+      els.push(textEl(t, { x: 80, y: 315, w: 800, h: 70, text: T('Alt başlık'), fontSize: 26, align: 'center' }));
       break;
     case 'content':
-      els.push(textEl(t, { x: 60, y: 36, w: 840, h: 80, text: 'Slayt başlığı', fontSize: 40, bold: true, valign: 'middle' }));
+      els.push(textEl(t, { x: 60, y: 36, w: 840, h: 80, text: T('Slayt başlığı'), fontSize: 40, bold: true, valign: 'middle' }));
       els.push(shapeEl('rect', t, { x: 70, y: 118, w: 80, h: 5 }));
-      els.push(textEl(t, { x: 60, y: 145, w: 840, h: 355, text: '• Birinci madde\n• İkinci madde\n• Üçüncü madde', fontSize: 26 }));
+      els.push(textEl(t, { x: 60, y: 145, w: 840, h: 355, text: T('• Birinci madde\n• İkinci madde\n• Üçüncü madde'), fontSize: 26 }));
       break;
     case 'section':
       els.push(shapeEl('rect', t, { x: 0, y: 0, w: 24, h: 540 }));
-      els.push(textEl(t, { x: 90, y: 180, w: 780, h: 110, text: 'Bölüm başlığı', fontSize: 54, bold: true, valign: 'bottom' }));
-      els.push(textEl(t, { x: 90, y: 295, w: 780, h: 60, text: 'Kısa açıklama', fontSize: 24 }));
+      els.push(textEl(t, { x: 90, y: 180, w: 780, h: 110, text: T('Bölüm başlığı'), fontSize: 54, bold: true, valign: 'bottom' }));
+      els.push(textEl(t, { x: 90, y: 295, w: 780, h: 60, text: T('Kısa açıklama'), fontSize: 24 }));
       break;
     case 'two':
-      els.push(textEl(t, { x: 60, y: 36, w: 840, h: 80, text: 'Slayt başlığı', fontSize: 40, bold: true, valign: 'middle' }));
+      els.push(textEl(t, { x: 60, y: 36, w: 840, h: 80, text: T('Slayt başlığı'), fontSize: 40, bold: true, valign: 'middle' }));
       els.push(shapeEl('rect', t, { x: 70, y: 118, w: 80, h: 5 }));
-      els.push(textEl(t, { x: 60, y: 150, w: 410, h: 350, text: '• Sol sütun\n• Madde', fontSize: 24 }));
-      els.push(textEl(t, { x: 490, y: 150, w: 410, h: 350, text: '• Sağ sütun\n• Madde', fontSize: 24 }));
+      els.push(textEl(t, { x: 60, y: 150, w: 410, h: 350, text: T('• Sol sütun\n• Madde'), fontSize: 24 }));
+      els.push(textEl(t, { x: 490, y: 150, w: 410, h: 350, text: T('• Sağ sütun\n• Madde'), fontSize: 24 }));
       break;
     default:
       break;
@@ -71,7 +72,7 @@ function makeSlide(layout, t) {
   return { id: uid(), bg: t.bg, notes: '', elements: els };
 }
 
-function newDeck(title = 'Adsız sunum') {
+function newDeck(title = T('Adsız sunum')) {
   const t = THEMES[0];
   const now = Date.now();
   return { id: uid(), title, theme: t.id, created: now, updated: now, version: APP_VERSION, slides: [makeSlide('title', t)] };
@@ -176,7 +177,7 @@ function commit({ list = true, props = true } = {}) {
 
 function scheduleSave() {
   if (!deck) return;
-  $('#saveState').textContent = 'Kaydediliyor…';
+  $('#saveState').textContent = T('Kaydediliyor…');
   clearTimeout(saveTimer);
   saveTimer = setTimeout(saveNow, 400);
 }
@@ -187,10 +188,10 @@ async function saveNow() {
   deck.version = APP_VERSION;
   try {
     await Store.put(deck);
-    $('#saveState').textContent = 'Kaydedildi';
+    $('#saveState').textContent = T('Kaydedildi');
   } catch (e) {
     console.error(e);
-    $('#saveState').textContent = 'Kaydedilemedi!';
+    $('#saveState').textContent = T('Kaydedilemedi!');
     toast('Kaydedilemedi: depolama alanı dolu olabilir.');
   }
 }
@@ -463,6 +464,7 @@ function applyBox(node, el) {
 function slideNode(slide, h = H) {
   const s = document.createElement('div');
   s.className = 'slide';
+  s.setAttribute('translate', 'no');
   s.style.height = `${h}px`;
   s.style.background = slideBgCss(slide);
   slide.elements.forEach((el) => s.appendChild(elNode(el)));
@@ -501,8 +503,8 @@ async function renderHome() {
     card.innerHTML = `
       <div class="thumb"></div>
       <div class="info">
-        <div class="name">${esc(d.title || 'Adsız sunum')}</div>
-        <div class="meta">${d.slides.length} slayt · ${new Date(d.updated).toLocaleString('tr-TR', { dateStyle: 'medium', timeStyle: 'short' })}</div>
+        <div class="name" translate="no">${esc(d.title || T('Adsız sunum'))}</div>
+        <div class="meta">${T('{n} slayt', { n: d.slides.length })} · ${new Date(d.updated).toLocaleString(P365.locale, { dateStyle: 'medium', timeStyle: 'short' })}</div>
       </div>
       <div class="card-actions">
         <button data-act="dup" title="Kopyasını oluştur">⧉</button>
@@ -515,14 +517,14 @@ async function renderHome() {
       if (!act) return openDeck(d.id);
       e.stopPropagation();
       if (act === 'del') {
-        if (confirm(`“${d.title}” silinsin mi? Bu işlem geri alınamaz.`)) {
+        if (confirm(T('“{title}” silinsin mi? Bu işlem geri alınamaz.', { title: d.title }))) {
           await Store.del(d.id);
           renderHome();
         }
       } else if (act === 'dup') {
         const copy = clone(d);
         copy.id = uid();
-        copy.title = `${d.title} (kopya)`;
+        copy.title = T('{title} (kopya)', { title: d.title });
         copy.created = copy.updated = Date.now();
         await Store.put(copy);
         renderHome();
@@ -556,7 +558,7 @@ async function openDeck(id) {
   $('#homeView').hidden = true;
   $('#editorView').hidden = false;
   $('#deckTitle').value = deck.title;
-  $('#saveState').textContent = 'Kaydedildi';
+  $('#saveState').textContent = T('Kaydedildi');
   resetHistory();
   renderAll();
   fitStage();
@@ -867,9 +869,9 @@ function renderProps() {
       <div class="prop-row"><label>Boyut</label><input type="number" min="4" max="400" step="0.5" data-prop="fontSize" value="${+(+tt.fontSize).toFixed(1)}"></div>
       <div class="prop-row"><label>Renk</label><input type="color" data-prop="color" value="${color6(tt.color, '#000000')}"></div>
       <div class="prop-row"><label>Stil</label><div class="seg">
-        <button data-toggle="bold" class="${tt.bold ? 'on' : ''}" title="Kalın (Ctrl+B)"><b>K</b></button>
-        <button data-toggle="italic" class="${tt.italic ? 'on' : ''}" title="İtalik (Ctrl+I)"><i>İ</i></button>
-        <button data-toggle="underline" class="${tt.underline ? 'on' : ''}" title="Altı çizili (Ctrl+U)"><u>A</u></button>
+        <button data-toggle="bold" class="${tt.bold ? 'on' : ''}" title="Kalın (Ctrl+B)"><b>${L('K', 'B')}</b></button>
+        <button data-toggle="italic" class="${tt.italic ? 'on' : ''}" title="İtalik (Ctrl+I)"><i>${L('İ', 'I')}</i></button>
+        <button data-toggle="underline" class="${tt.underline ? 'on' : ''}" title="Altı çizili (Ctrl+U)"><u>${L('A', 'U')}</u></button>
       </div></div>
       <div class="prop-row"><label>Hizalama</label><div class="seg">
         ${[['left', '⯇'], ['center', '≡'], ['right', '⯈'], ['justify', '☰']].map(([v, i]) => `<button data-set="align" data-val="${v}" class="${(tt.align || 'left') === v ? 'on' : ''}">${i}</button>`).join('')}
@@ -903,7 +905,7 @@ function renderProps() {
     html += `<button class="btn" data-action="img-ratio">Orijinal oranı geri yükle</button>`;
   }
   html += `
-    <h3>Düzen</h3>
+    <h3>${L('Düzen', 'Arrange')}</h3>
     <div class="btn-row"><button class="btn" data-action="front" title="Öne getir">⬆ Öne</button><button class="btn" data-action="back" title="Arkaya gönder">⬇ Arkaya</button></div>
     <div class="btn-row"><button class="btn" data-action="center-h">↔ Ortala</button><button class="btn" data-action="center-v">↕ Ortala</button></div>
     <button class="btn" data-action="dup">⧉ Çoğalt</button>
@@ -1091,7 +1093,7 @@ function readImageFile(file) {
         const jpeg = file.type === 'image/jpeg';
         res({ src: c.toDataURL(jpeg ? 'image/jpeg' : 'image/png', 0.9), w: cw, h: ch });
       };
-      img.onerror = () => rej(new Error('Görsel okunamadı'));
+      img.onerror = () => rej(new Error(T('Görsel okunamadı')));
       img.src = fr.result;
     };
     fr.onerror = () => rej(fr.error);
@@ -1446,7 +1448,7 @@ function loadLib() {
     const s = document.createElement('script');
     s.src = '../vendor/pptxgen.bundle.js';
     s.onload = () => res();
-    s.onerror = () => { libPromise = null; rej(new Error('PowerPoint kütüphanesi yüklenemedi')); };
+    s.onerror = () => { libPromise = null; rej(new Error(T('PowerPoint kütüphanesi yüklenemedi'))); };
     document.head.appendChild(s);
   });
   return libPromise;
@@ -1476,7 +1478,7 @@ async function exportFile(d = deck, ext = 'present') {
     toast(ext === 'pptx' ? 'PowerPoint dosyası indirildi.' : 'Present dosyası indirildi.');
   } catch (e) {
     console.error(e);
-    toast(`İndirme başarısız: ${e.message}`);
+    toast(T('İndirme başarısız: {msg}', { msg: T(e.message) }));
   }
 }
 
@@ -1500,10 +1502,10 @@ function exportPdf() {
 const ELEMENT_TYPES = ['text', 'rect', 'ellipse', 'image', 'shape', 'table'];
 
 function normalizeDeck(d) {
-  if (!d || !Array.isArray(d.slides)) throw new Error('Geçersiz dosya');
+  if (!d || !Array.isArray(d.slides)) throw new Error(T('Geçersiz dosya'));
   const t = themeById(d.theme);
   d.id = uid();
-  d.title = String(d.title || 'İçe aktarılan sunum');
+  d.title = String(d.title || T('İçe aktarılan sunum'));
   d.theme = t.id;
   d.created = d.created || Date.now();
   d.updated = Date.now();
@@ -1561,11 +1563,11 @@ async function importFile(file) {
       d = normalizeDeck(data.format === FILE_FORMAT ? data.deck : data);
     }
     await Store.put(d);
-    toast(skipped ? `“${d.title}” açıldı. Desteklenmeyen ${skipped} öğe (grafik vb.) atlandı.` : `“${d.title}” açıldı.`);
+    toast(skipped ? T('“{title}” açıldı. Desteklenmeyen {n} öğe (grafik vb.) atlandı.', { title: d.title, n: skipped }) : T('“{title}” açıldı.', { title: d.title }));
     openDeck(d.id);
   } catch (e) {
     console.error(e);
-    toast(`Dosya açılamadı: ${e.message || 'bilinmeyen hata'}. Geçerli bir .present veya .pptx dosyası seçin.`);
+    toast(T('Dosya açılamadı: {msg}. Geçerli bir .present veya .pptx dosyası seçin.', { msg: T(e.message || 'bilinmeyen hata') }));
   }
 }
 
@@ -1576,6 +1578,7 @@ async function importFile(file) {
 let toastTimer = null;
 function toast(msg) {
   const t = $('#toast');
+  msg = T(msg);
   t.textContent = msg;
   t.hidden = false;
   clearTimeout(toastTimer);
@@ -1596,7 +1599,7 @@ function bindEvents() {
   $('#fileImage').addEventListener('change', (e) => { const f = e.target.files[0]; if (f) addImageFile(f); e.target.value = ''; });
 
   $('#deckTitle').addEventListener('input', (e) => { deck.title = e.target.value; scheduleSave(); });
-  $('#deckTitle').addEventListener('change', (e) => { deck.title = e.target.value.trim() || 'Adsız sunum'; e.target.value = deck.title; pushHistory(); });
+  $('#deckTitle').addEventListener('change', (e) => { deck.title = e.target.value.trim() || T('Adsız sunum'); e.target.value = deck.title; pushHistory(); });
   $('#deckTitle').addEventListener('keydown', (e) => { if (e.key === 'Enter') e.target.blur(); });
 
   $('#btnUndo').addEventListener('click', undo);

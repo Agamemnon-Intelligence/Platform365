@@ -1,17 +1,20 @@
-/* Platform365 EasyWrite 2.1.0 — tarayıcı tabanlı kelime işlemci */
+/* Platform365 EasyWrite 3.0.0 — tarayıcı tabanlı kelime işlemci */
 'use strict';
 
-const APP_VERSION = '2.1.0';
+const APP_VERSION = '3.0.0';
 const FILE_FORMAT = 'easywrite';
 const P = window.P365;
 const C = window.Convert;
+const { t: T, L } = P;
+const EN = P.lang === 'en';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
-const trLower = (s) => s.toLocaleLowerCase('tr');
-const trUpper = (s) => s.toLocaleUpperCase('tr');
+// Büyük/küçük harf dönüşümleri arayüz dilinin kurallarını izler (Türkçede i ↔ İ, ı ↔ I)
+const lcase = (s) => s.toLocaleLowerCase(P.lang);
+const ucase = (s) => s.toLocaleUpperCase(P.lang);
 
 /* ------------------------------------------------------------------ */
 /* Ayarlar                                                             */
@@ -32,16 +35,23 @@ const FONTS = ['Calibri', 'Arial', 'Georgia', 'Times New Roman', 'Verdana', 'Tre
 /* Şablonlar                                                           */
 /* ------------------------------------------------------------------ */
 
-const today = () => new Date().toLocaleDateString('tr-TR', { dateStyle: 'long' });
+const today = () => new Date().toLocaleDateString(P.locale, { dateStyle: 'long' });
 const TEMPLATES = [
   { id: 'blank', name: 'Boş belge', icon: '📄', desc: 'Sıfırdan başlayın', html: () => '<p><br></p>' },
-  { id: 'letter', name: 'Mektup', icon: '✉️', desc: 'Resmî yazı / dilekçe', html: () => `<p style="text-align: right">${today()}</p><p><b>Sayın [Alıcı Adı],</b></p><p>[Mektubunuzun amacını belirten giriş paragrafı.]</p><p>[Ayrıntılar ve gerekçeler.]</p><p>Gereğini bilgilerinize arz ederim.</p><p><br></p><p style="text-align: right">Saygılarımla,<br><b>[Adınız Soyadınız]</b><br>[İletişim bilgileri]</p>` },
-  { id: 'cv', name: 'Özgeçmiş', icon: '🧑‍💼', desc: 'Sade ve modern CV', html: () => '<h1>Ad Soyad</h1><p>📧 eposta@ornek.com · 📱 +90 5xx xxx xx xx · 📍 Şehir · 🔗 linkedin.com/in/...</p><hr><h2>Özet</h2><p>Deneyiminizi ve hedeflerinizi anlatan 2–3 cümle.</p><h2>Deneyim</h2><h3>Pozisyon — Şirket</h3><p><i>2022 – Günümüz</i></p><ul><li>Somut bir başarı (rakamlarla)</li><li>Sorumluluk alanı</li></ul><h2>Eğitim</h2><h3>Bölüm — Üniversite</h3><p><i>2016 – 2020</i></p><h2>Yetenekler</h2><table><tr><th>Teknik</th><th>Diller</th></tr><tr><td>Excel, Python, Figma</td><td>Türkçe (ana dil), İngilizce (C1)</td></tr></table>' },
-  { id: 'meeting', name: 'Toplantı notu', icon: '🗒️', desc: 'Gündem, kararlar, görevler', html: () => `<h1>Toplantı notu</h1><p><b>Tarih:</b> ${today()} · <b>Katılımcılar:</b> @...</p><h2>Gündem</h2><ol><li>Konu 1</li><li>Konu 2</li></ol><h2>Kararlar</h2><div data-callout="success"><p>Alınan karar…</p></div><h2>Görevler</h2><ul class="checklist"><li data-check="0">Görev — Sorumlu — Tarih</li><li data-check="0">Görev — Sorumlu — Tarih</li></ul><h2>Notlar</h2><p><br></p>` },
-  { id: 'report', name: 'Rapor', icon: '📊', desc: 'İçindekiler ve bölümler', html: () => `<h1>Rapor başlığı</h1><p><i>Hazırlayan: [Ad] · ${today()}</i></p><nav data-toc contenteditable="false"></nav><h2>Yönetici özeti</h2><div data-callout="info"><p>Raporun en önemli üç bulgusu.</p></div><h2>Giriş</h2><p>Amaç ve kapsam.</p><h2>Bulgular</h2><h3>Bulgu 1</h3><p>Açıklama.</p><table><tr><th>Ölçüt</th><th>Değer</th><th>Değişim</th></tr><tr><td>Örnek</td><td>120</td><td>+%8</td></tr></table><h2>Sonuç ve öneriler</h2><ul><li>Öneri 1</li><li>Öneri 2</li></ul>` },
-  { id: 'essay', name: 'Ödev / Makale', icon: '🎓', desc: 'Akademik düzen', html: () => `<h1 style="text-align: center">Makale Başlığı</h1><p style="text-align: center">Ad Soyad · Kurum · ${today()}</p><h2>Özet</h2><p style="text-align: justify">Çalışmanın kısa özeti (150–250 kelime).</p><p><b>Anahtar kelimeler:</b> …</p><h2>1. Giriş</h2><p style="text-align: justify"><br></p><h2>2. Yöntem</h2><p style="text-align: justify"><br></p><h2>3. Bulgular</h2><p style="text-align: justify"><br></p><h2>4. Tartışma</h2><p style="text-align: justify"><br></p><h2>Kaynakça</h2><ol><li>Yazar, A. (Yıl). <i>Eser adı</i>. Yayınevi.</li></ol>` },
-  { id: 'plan', name: 'Proje planı', icon: '🚀', desc: 'Hedefler, takvim, riskler', html: () => '<h1>Proje planı</h1><h2>Hedefler</h2><ul><li>Ölçülebilir hedef 1</li><li>Ölçülebilir hedef 2</li></ul><h2>Takvim</h2><table><tr><th>Aşama</th><th>Başlangıç</th><th>Bitiş</th><th>Sorumlu</th></tr><tr><td>Analiz</td><td></td><td></td><td></td></tr><tr><td>Tasarım</td><td></td><td></td><td></td></tr><tr><td>Uygulama</td><td></td><td></td><td></td></tr></table><h2>Yapılacaklar</h2><ul class="checklist"><li data-check="1">Proje başlatıldı</li><li data-check="0">Ekip toplantısı</li></ul><h2>Riskler</h2><div data-callout="warning"><p>Olası risk ve önlemi.</p></div><details open><summary>Bütçe ayrıntıları</summary><p>Kalemler…</p></details>' },
-  { id: 'journal', name: 'Günlük', icon: '📔', desc: 'Bugün ne oldu?', html: () => `<h1>${today()}</h1><h3>Bugün için minnettar olduklarım</h3><ol><li><br></li></ol><h3>Bugün neler oldu?</h3><p><br></p><h3>Yarın için niyetim</h3><ul class="checklist"><li data-check="0"><br></li></ul>` },
+  { id: 'letter', name: 'Mektup', icon: '✉️', desc: 'Resmî yazı / dilekçe', html: () => L(`<p style="text-align: right">${today()}</p><p><b>Sayın [Alıcı Adı],</b></p><p>[Mektubunuzun amacını belirten giriş paragrafı.]</p><p>[Ayrıntılar ve gerekçeler.]</p><p>Gereğini bilgilerinize arz ederim.</p><p><br></p><p style="text-align: right">Saygılarımla,<br><b>[Adınız Soyadınız]</b><br>[İletişim bilgileri]</p>`,
+    `<p style="text-align: right">${today()}</p><p><b>Dear [Recipient Name],</b></p><p>[Opening paragraph stating the purpose of your letter.]</p><p>[Details and reasons.]</p><p>Thank you for your time and consideration.</p><p><br></p><p style="text-align: right">Sincerely,<br><b>[Your Name]</b><br>[Contact details]</p>`) },
+  { id: 'cv', name: 'Özgeçmiş', icon: '🧑‍💼', desc: 'Sade ve modern CV', html: () => L('<h1>Ad Soyad</h1><p>📧 eposta@ornek.com · 📱 +90 5xx xxx xx xx · 📍 Şehir · 🔗 linkedin.com/in/...</p><hr><h2>Özet</h2><p>Deneyiminizi ve hedeflerinizi anlatan 2–3 cümle.</p><h2>Deneyim</h2><h3>Pozisyon — Şirket</h3><p><i>2022 – Günümüz</i></p><ul><li>Somut bir başarı (rakamlarla)</li><li>Sorumluluk alanı</li></ul><h2>Eğitim</h2><h3>Bölüm — Üniversite</h3><p><i>2016 – 2020</i></p><h2>Yetenekler</h2><table><tr><th>Teknik</th><th>Diller</th></tr><tr><td>Excel, Python, Figma</td><td>Türkçe (ana dil), İngilizce (C1)</td></tr></table>',
+    '<h1>Full Name</h1><p>📧 email@example.com · 📱 +1 555 000 0000 · 📍 City · 🔗 linkedin.com/in/...</p><hr><h2>Summary</h2><p>Two or three sentences about your experience and goals.</p><h2>Experience</h2><h3>Position — Company</h3><p><i>2022 – Present</i></p><ul><li>A concrete achievement (with numbers)</li><li>Area of responsibility</li></ul><h2>Education</h2><h3>Degree — University</h3><p><i>2016 – 2020</i></p><h2>Skills</h2><table><tr><th>Technical</th><th>Languages</th></tr><tr><td>Excel, Python, Figma</td><td>English (native), Spanish (B2)</td></tr></table>') },
+  { id: 'meeting', name: 'Toplantı notu', icon: '🗒️', desc: 'Gündem, kararlar, görevler', html: () => L(`<h1>Toplantı notu</h1><p><b>Tarih:</b> ${today()} · <b>Katılımcılar:</b> @...</p><h2>Gündem</h2><ol><li>Konu 1</li><li>Konu 2</li></ol><h2>Kararlar</h2><div data-callout="success"><p>Alınan karar…</p></div><h2>Görevler</h2><ul class="checklist"><li data-check="0">Görev — Sorumlu — Tarih</li><li data-check="0">Görev — Sorumlu — Tarih</li></ul><h2>Notlar</h2><p><br></p>`,
+    `<h1>Meeting notes</h1><p><b>Date:</b> ${today()} · <b>Attendees:</b> @...</p><h2>Agenda</h2><ol><li>Topic 1</li><li>Topic 2</li></ol><h2>Decisions</h2><div data-callout="success"><p>Decision made…</p></div><h2>Action items</h2><ul class="checklist"><li data-check="0">Task — Owner — Due date</li><li data-check="0">Task — Owner — Due date</li></ul><h2>Notes</h2><p><br></p>`) },
+  { id: 'report', name: 'Rapor', icon: '📊', desc: 'İçindekiler ve bölümler', html: () => L(`<h1>Rapor başlığı</h1><p><i>Hazırlayan: [Ad] · ${today()}</i></p><nav data-toc contenteditable="false"></nav><h2>Yönetici özeti</h2><div data-callout="info"><p>Raporun en önemli üç bulgusu.</p></div><h2>Giriş</h2><p>Amaç ve kapsam.</p><h2>Bulgular</h2><h3>Bulgu 1</h3><p>Açıklama.</p><table><tr><th>Ölçüt</th><th>Değer</th><th>Değişim</th></tr><tr><td>Örnek</td><td>120</td><td>+%8</td></tr></table><h2>Sonuç ve öneriler</h2><ul><li>Öneri 1</li><li>Öneri 2</li></ul>`,
+    `<h1>Report title</h1><p><i>Prepared by: [Name] · ${today()}</i></p><nav data-toc contenteditable="false"></nav><h2>Executive summary</h2><div data-callout="info"><p>The three most important findings of the report.</p></div><h2>Introduction</h2><p>Purpose and scope.</p><h2>Findings</h2><h3>Finding 1</h3><p>Description.</p><table><tr><th>Metric</th><th>Value</th><th>Change</th></tr><tr><td>Example</td><td>120</td><td>+8%</td></tr></table><h2>Conclusions and recommendations</h2><ul><li>Recommendation 1</li><li>Recommendation 2</li></ul>`) },
+  { id: 'essay', name: 'Ödev / Makale', icon: '🎓', desc: 'Akademik düzen', html: () => L(`<h1 style="text-align: center">Makale Başlığı</h1><p style="text-align: center">Ad Soyad · Kurum · ${today()}</p><h2>Özet</h2><p style="text-align: justify">Çalışmanın kısa özeti (150–250 kelime).</p><p><b>Anahtar kelimeler:</b> …</p><h2>1. Giriş</h2><p style="text-align: justify"><br></p><h2>2. Yöntem</h2><p style="text-align: justify"><br></p><h2>3. Bulgular</h2><p style="text-align: justify"><br></p><h2>4. Tartışma</h2><p style="text-align: justify"><br></p><h2>Kaynakça</h2><ol><li>Yazar, A. (Yıl). <i>Eser adı</i>. Yayınevi.</li></ol>`,
+    `<h1 style="text-align: center">Paper Title</h1><p style="text-align: center">Full Name · Institution · ${today()}</p><h2>Abstract</h2><p style="text-align: justify">A short summary of the study (150–250 words).</p><p><b>Keywords:</b> …</p><h2>1. Introduction</h2><p style="text-align: justify"><br></p><h2>2. Method</h2><p style="text-align: justify"><br></p><h2>3. Results</h2><p style="text-align: justify"><br></p><h2>4. Discussion</h2><p style="text-align: justify"><br></p><h2>References</h2><ol><li>Author, A. (Year). <i>Title of work</i>. Publisher.</li></ol>`) },
+  { id: 'plan', name: 'Proje planı', icon: '🚀', desc: 'Hedefler, takvim, riskler', html: () => L('<h1>Proje planı</h1><h2>Hedefler</h2><ul><li>Ölçülebilir hedef 1</li><li>Ölçülebilir hedef 2</li></ul><h2>Takvim</h2><table><tr><th>Aşama</th><th>Başlangıç</th><th>Bitiş</th><th>Sorumlu</th></tr><tr><td>Analiz</td><td></td><td></td><td></td></tr><tr><td>Tasarım</td><td></td><td></td><td></td></tr><tr><td>Uygulama</td><td></td><td></td><td></td></tr></table><h2>Yapılacaklar</h2><ul class="checklist"><li data-check="1">Proje başlatıldı</li><li data-check="0">Ekip toplantısı</li></ul><h2>Riskler</h2><div data-callout="warning"><p>Olası risk ve önlemi.</p></div><details open><summary>Bütçe ayrıntıları</summary><p>Kalemler…</p></details>',
+    '<h1>Project plan</h1><h2>Goals</h2><ul><li>Measurable goal 1</li><li>Measurable goal 2</li></ul><h2>Timeline</h2><table><tr><th>Phase</th><th>Start</th><th>End</th><th>Owner</th></tr><tr><td>Analysis</td><td></td><td></td><td></td></tr><tr><td>Design</td><td></td><td></td><td></td></tr><tr><td>Implementation</td><td></td><td></td><td></td></tr></table><h2>To-do</h2><ul class="checklist"><li data-check="1">Project kicked off</li><li data-check="0">Team meeting</li></ul><h2>Risks</h2><div data-callout="warning"><p>A possible risk and how to handle it.</p></div><details open><summary>Budget details</summary><p>Line items…</p></details>') },
+  { id: 'journal', name: 'Günlük', icon: '📔', desc: 'Bugün ne oldu?', html: () => L(`<h1>${today()}</h1><h3>Bugün için minnettar olduklarım</h3><ol><li><br></li></ol><h3>Bugün neler oldu?</h3><p><br></p><h3>Yarın için niyetim</h3><ul class="checklist"><li data-check="0"><br></li></ul>`,
+    `<h1>${today()}</h1><h3>Today I'm grateful for</h3><ol><li><br></li></ol><h3>What happened today?</h3><p><br></p><h3>My intention for tomorrow</h3><ul class="checklist"><li data-check="0"><br></li></ul>`) },
 ];
 
 /* ------------------------------------------------------------------ */
@@ -78,7 +88,7 @@ const Store = {
   async del(id) { return this.db ? this.req('readwrite', (s) => s.delete(id)) : this.mem.delete(id); },
 };
 
-function newDoc(title = 'Adsız belge', html = '<p><br></p>') {
+function newDoc(title = T('Adsız belge'), html = '<p><br></p>') {
   const now = Date.now();
   return { id: P.uid(), title, html, created: now, updated: now, version: APP_VERSION, page: { size: 'A4', margin: 'normal', paper: 'white', font: 'Calibri', fontSize: 16 }, goal: 0 };
 }
@@ -96,7 +106,7 @@ const page = () => $('#page');
 
 function scheduleSave() {
   if (!doc) return;
-  $('#saveState').textContent = 'Kaydediliyor…';
+  $('#saveState').textContent = T('Kaydediliyor…');
   clearTimeout(saveTimer);
   saveTimer = setTimeout(saveNow, 500);
 }
@@ -115,10 +125,10 @@ async function saveNow() {
   doc.version = APP_VERSION;
   try {
     await Store.put(doc);
-    $('#saveState').textContent = 'Kaydedildi';
+    $('#saveState').textContent = T('Kaydedildi');
   } catch (e) {
     console.error(e);
-    $('#saveState').textContent = 'Kaydedilemedi!';
+    $('#saveState').textContent = T('Kaydedilemedi!');
     P.toast('Kaydedilemedi: depolama alanı dolu olabilir.');
   }
 }
@@ -129,7 +139,7 @@ function changed() { scheduleSave(); scheduleStats(); }
 /* ------------------------------------------------------------------ */
 
 function renderTemplates() {
-  $('#tplGrid').innerHTML = TEMPLATES.map((t) => `<button class="tpl-card" data-tpl="${t.id}"><div class="tp"><span class="ico">${t.icon}</span>${t.id === 'blank' ? '' : C.sanitize(t.html()).slice(0, 600)}</div><b>${esc(t.name)}</b><small>${esc(t.desc)}</small></button>`).join('');
+  $('#tplGrid').innerHTML = TEMPLATES.map((t) => `<button class="tpl-card" data-tpl="${t.id}"><div class="tp" translate="no"><span class="ico">${t.icon}</span>${t.id === 'blank' ? '' : C.sanitize(t.html()).slice(0, 600)}</div><b>${esc(t.name)}</b><small>${esc(t.desc)}</small></button>`).join('');
 }
 
 async function renderHome() {
@@ -143,10 +153,10 @@ async function renderHome() {
     card.tabIndex = 0;
     const words = (d.html.replace(/<[^>]+>/g, ' ').match(/[\p{L}\p{N}]+/gu) || []).length;
     card.innerHTML = `
-      <div class="thumb"></div>
+      <div class="thumb" translate="no"></div>
       <div class="info">
-        <div class="name">${esc(d.title || 'Adsız belge')}</div>
-        <div class="meta">${words} kelime · ${P.relTime(d.updated)}</div>
+        <div class="name" translate="no">${esc(d.title || T('Adsız belge'))}</div>
+        <div class="meta">${T('{n} kelime', { n: words })} · ${P.relTime(d.updated)}</div>
       </div>
       <div class="card-actions">
         <button data-act="dup" title="Kopyasını oluştur">⧉</button>
@@ -159,9 +169,9 @@ async function renderHome() {
       if (!act) return openDoc(d.id);
       e.stopPropagation();
       if (act === 'del') {
-        if (confirm(`“${d.title}” silinsin mi? Bu işlem geri alınamaz.`)) { await Store.del(d.id); renderHome(); }
+        if (confirm(T('“{title}” silinsin mi? Bu işlem geri alınamaz.', { title: d.title }))) { await Store.del(d.id); renderHome(); }
       } else if (act === 'dup') {
-        const copy = { ...d, id: P.uid(), title: `${d.title} (kopya)`, created: Date.now(), updated: Date.now() };
+        const copy = { ...d, id: P.uid(), title: T('{title} (kopya)', { title: d.title }), created: Date.now(), updated: Date.now() };
         await Store.put(copy);
         renderHome();
       } else if (act === 'dl') exportAs('docx', d);
@@ -191,7 +201,7 @@ async function openDoc(id) {
   $('#homeView').hidden = true;
   $('#editorView').hidden = false;
   $('#docTitle').value = doc.title;
-  $('#saveState').textContent = 'Kaydedildi';
+  $('#saveState').textContent = T('Kaydedildi');
   const pg = page();
   pg.innerHTML = doc.html || '<p><br></p>';
   if (!pg.firstElementChild) pg.innerHTML = '<p><br></p>';
@@ -215,7 +225,7 @@ async function openDoc(id) {
 
 async function createDoc(tplId = 'blank') {
   const t = TEMPLATES.find((x) => x.id === tplId) || TEMPLATES[0];
-  const d = newDoc(tplId === 'blank' ? 'Adsız belge' : t.name, t.html());
+  const d = newDoc(T(tplId === 'blank' ? 'Adsız belge' : t.name), t.html());
   await Store.put(d);
   openDoc(d.id);
 }
@@ -226,7 +236,7 @@ async function route() {
   let m;
   if ((m = /^#\/new(?:\/(\w+))?$/.exec(h))) {
     const t = TEMPLATES.find((x) => x.id === m[1]) || TEMPLATES[0];
-    const d = newDoc(t.id === 'blank' ? 'Adsız belge' : t.name, t.html());
+    const d = newDoc(T(t.id === 'blank' ? 'Adsız belge' : t.name), t.html());
     await Store.put(d);
     location.replace(`#/d/${d.id}`);
     return;
@@ -241,7 +251,7 @@ async function handleInbox(id) {
   try { item = await P.inbox.take(id); } catch (e) { /* yok */ }
   if (!item) { location.replace('#'); return; }
   if (item.kind === 'html') {
-    const d = newDoc(item.title || 'İçe aktarılan belge', C.sanitize(item.html || '<p><br></p>'));
+    const d = newDoc(item.title || T('İçe aktarılan belge'), C.sanitize(item.html || '<p><br></p>'));
     await Store.put(d);
     location.replace(`#/d/${d.id}`);
     P.toast('Belge oluşturuldu.');
@@ -510,7 +520,7 @@ function toggleChecklist() {
 
 async function insertLink() {
   const sel = lastRange && !lastRange.collapsed ? lastRange.toString() : '';
-  const url = await P.prompt('Bağlantı ekle', 'https://', sel ? `“${sel.slice(0, 60)}” metnine bağlantı verilecek.` : 'Adres metin olarak eklenecek.');
+  const url = await P.prompt('Bağlantı ekle', 'https://', sel ? T('“{sel}” metnine bağlantı verilecek.', { sel: sel.slice(0, 60) }) : 'Adres metin olarak eklenecek.');
   if (!url) return;
   const u = url.trim();
   if (!/^(https?:|mailto:|tel:|#)/i.test(u)) { P.toast('Geçerli bir adres girin (https://…).'); return; }
@@ -533,7 +543,7 @@ function readImageFile(file) {
         c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
         res(c.toDataURL(file.type === 'image/jpeg' ? 'image/jpeg' : 'image/png', 0.88));
       };
-      img.onerror = () => rej(new Error('Görsel okunamadı'));
+      img.onerror = () => rej(new Error(T('Görsel okunamadı')));
       img.src = fr.result;
     };
     fr.onerror = () => rej(fr.error);
@@ -772,13 +782,14 @@ function tryCalc(ctx) {
   if (!m) return false;
   let expr = m[1].replace(/^[^\d(-]+/, '').trim();
   if (!/\d/.test(expr) || !/\d\s*[-+*/×÷x^%]\s*[\d(]|\d%/.test(expr)) return false;
-  if (expr.includes(',')) expr = expr.replace(/\.(?=\d{3}\b)/g, '').replace(/,/g, '.');
+  // Türkçede virgül ondalık ayırıcıdır; İngilizcede binlik ayırıcı olarak atılır
+  if (expr.includes(',')) expr = EN ? expr.replace(/,/g, '') : expr.replace(/\.(?=\d{3}\b)/g, '').replace(/,/g, '.');
   expr = expr.replace(/(\d)\s*[x×]\s*(?=[\d(])/g, '$1*').replace(/÷/g, '/').replace(/\^/g, '**').replace(/(\d+(?:\.\d+)?)%/g, '($1/100)');
   if (!/^[\d+\-*/().\s]+$/.test(expr)) return false;
   let v;
   try { v = Function(`"use strict"; return (${expr});`)(); } catch (e) { return false; }
   if (typeof v !== 'number' || !Number.isFinite(v)) return false;
-  document.execCommand('insertText', false, `=${v.toLocaleString('tr-TR', { maximumFractionDigits: 6 })}`);
+  document.execCommand('insertText', false, `=${v.toLocaleString(P.locale, { maximumFractionDigits: 6 })}`);
   changed();
   return true;
 }
@@ -798,7 +809,7 @@ const SLASH = [
   { k: 'basari ipucu tamam', n: 'Başarı kutusu', d: 'Yeşil not', ic: '✅', run: () => insertCallout('success') },
   { k: 'uyari dikkat warning', n: 'Uyarı kutusu', d: 'Sarı not', ic: '⚠️', run: () => insertCallout('warning') },
   { k: 'tehlike hata danger', n: 'Tehlike kutusu', d: 'Kırmızı not', ic: '⛔', run: () => insertCallout('danger') },
-  { k: 'acilir bolum details toggle', n: 'Açılır bölüm', d: 'Tıklayınca açılan içerik', ic: '▸', run: () => insertHtmlCaret('<details open><summary>{c}Başlık</summary><p><br></p></details><p><br></p>') },
+  { k: 'acilir bolum details toggle', n: 'Açılır bölüm', d: 'Tıklayınca açılan içerik', ic: '▸', run: () => insertHtmlCaret(`<details open><summary>{c}${T('Başlık')}</summary><p><br></p></details><p><br></p>`) },
   { k: 'tablo table', n: 'Tablo', d: 'Satır ve sütun', ic: '▦', run: insertTable },
   { k: 'gorsel resim image', n: 'Görsel', d: 'Dosyadan resim', ic: '🖼', run: () => $('#fileImage').click() },
   { k: 'baglanti link', n: 'Bağlantı', d: 'Web adresi', ic: '🔗', run: insertLink },
@@ -806,12 +817,12 @@ const SLASH = [
   { k: 'sayfa sonu page break', n: 'Sayfa sonu', d: 'Yeni sayfaya geç', ic: '⤓', run: () => insertHtmlCaret('<hr data-page-break><p>{c}</p>') },
   { k: 'icindekiler toc', n: 'İçindekiler', d: 'Başlıklardan otomatik dizin', ic: '☰', run: insertToc },
   { k: 'tarih bugun date', n: 'Bugünün tarihi', d: today(), ic: '📅', run: () => exec('insertText', today()) },
-  { k: 'saat zaman time', n: 'Saat', d: 'Şimdiki saat', ic: '⏰', run: () => exec('insertText', new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })) },
+  { k: 'saat zaman time', n: 'Saat', d: 'Şimdiki saat', ic: '⏰', run: () => exec('insertText', new Date().toLocaleTimeString(P.locale, { hour: '2-digit', minute: '2-digit' })) },
   { k: 'emoji', n: 'Emoji', d: 'Emoji seçici', ic: '😀', run: insertEmoji },
   { k: 'sunum present slayt', n: 'Sunuma dönüştür', d: 'Bu belgeden Present sunumu', ic: '▶', run: toPresent },
 ];
 let slash = null; // { node, offset, items, on }
-const normTr = (s) => trLower(s).normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/ı/g, 'i');
+const normTr = (s) => lcase(s).normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/ı/g, 'i');
 function openSlash() {
   const s = getSelection();
   if (!s.rangeCount) return;
@@ -833,10 +844,10 @@ function drawSlash() {
   const q = slashQuery();
   if (q === null) { closeSlash(); return; }
   const nq = normTr(q);
-  slash.items = SLASH.filter((x) => !nq || normTr(`${x.n} ${x.k}`).includes(nq));
+  slash.items = SLASH.filter((x) => !nq || normTr(`${T(x.n)} ${x.n} ${x.k}`).includes(nq));
   slash.on = Math.min(slash.on, Math.max(0, slash.items.length - 1));
   const m = $('#slashMenu');
-  m.innerHTML = slash.items.length ? slash.items.map((x, i) => `<div class="si${i === slash.on ? ' on' : ''}" data-i="${i}"><span class="ic">${x.ic}</span><span><b>${esc(x.n)}</b><small>${esc(x.d)}</small></span></div>`).join('') : '<div class="empty">Sonuç yok — Esc ile kapatın</div>';
+  m.innerHTML = slash.items.length ? slash.items.map((x, i) => `<div class="si${i === slash.on ? ' on' : ''}" data-i="${i}"><span class="ic">${x.ic}</span><span><b>${esc(T(x.n))}</b><small>${esc(T(x.d))}</small></span></div>`).join('') : `<div class="empty">${T('Sonuç yok — Esc ile kapatın')}</div>`;
   m.hidden = false;
   const rr = document.createRange();
   rr.setStart(slash.node, slash.offset);
@@ -950,11 +961,11 @@ function refreshStructure(force = false) {
   if (!force && sig === structSig) return;
   structSig = sig;
   const lvl = (h) => +h.tagName[1];
-  $('#outline').innerHTML = hs.length ? hs.map((h) => `<a data-lvl="${lvl(h)}" data-target="${h.id}" title="${esc(h.textContent)}">${esc(h.textContent.trim() || '(boş başlık)')}</a>`).join('')
-    : '<p class="empty">Başlık eklediğinizde (# ve boşluk, ya da Başlık 1–3) burada tıklanabilir ana hat oluşur.</p>';
+  $('#outline').innerHTML = hs.length ? hs.map((h) => `<a data-lvl="${lvl(h)}" data-target="${h.id}" title="${esc(h.textContent)}">${esc(h.textContent.trim() || T('(boş başlık)'))}</a>`).join('')
+    : `<p class="empty">${T('Başlık eklediğinizde (# ve boşluk, ya da Başlık 1–3) burada tıklanabilir ana hat oluşur.')}</p>`;
   for (const nav of $$('nav[data-toc]', pg)) {
     nav.setAttribute('contenteditable', 'false');
-    nav.innerHTML = `<b>İçindekiler</b>${hs.length ? hs.map((h) => `<a data-lvl="${lvl(h)}" data-target="${h.id}">${esc(h.textContent.trim())}</a>`).join('') : '<small>Henüz başlık yok.</small>'}`;
+    nav.innerHTML = `<b>${T('İçindekiler')}</b>${hs.length ? hs.map((h) => `<a data-lvl="${lvl(h)}" data-target="${h.id}">${esc(h.textContent.trim())}</a>`).join('') : `<small>${T('Henüz başlık yok.')}</small>`}`;
   }
 }
 function jumpTo(id) {
@@ -964,8 +975,16 @@ function jumpTo(id) {
   placeCaret(h, true);
 }
 
-const STOP = new Set('ve ile ama fakat ancak veya ya da de da ki bu şu o bir için gibi daha çok en mi mı mu mü ne her ise olan olarak olan değil kadar sonra önce göre bunu şunu onu bunun onun şöyle böyle hem diye ben sen biz siz onlar benim senin bizim sizin artık yine zaten bile sadece hiç nasıl neden niçin hangi kendi dolayı üzere ise iken bazı tüm bütün birçok çünkü eğer yani'.split(' '));
-const FILLERS = ['aslında', 'gerçekten', 'yani', 'sanki', 'oldukça', 'bayağı', 'resmen', 'açıkçası', 'kesinlikle', 'tabii ki', 'şey', 'falan', 'filan', 'işte', 'bir nevi', 'bir şekilde', 'adeta', 'son derece', 'gayet'];
+const STOP_TR = new Set('ve ile ama fakat ancak veya ya da de da ki bu şu o bir için gibi daha çok en mi mı mu mü ne her ise olan olarak olan değil kadar sonra önce göre bunu şunu onu bunun onun şöyle böyle hem diye ben sen biz siz onlar benim senin bizim sizin artık yine zaten bile sadece hiç nasıl neden niçin hangi kendi dolayı üzere ise iken bazı tüm bütün birçok çünkü eğer yani'.split(' '));
+const FILLERS_TR = ['aslında', 'gerçekten', 'yani', 'sanki', 'oldukça', 'bayağı', 'resmen', 'açıkçası', 'kesinlikle', 'tabii ki', 'şey', 'falan', 'filan', 'işte', 'bir nevi', 'bir şekilde', 'adeta', 'son derece', 'gayet'];
+const STOP_EN = new Set('the and for but with that this from have has had was were are been being will would could should there their they them then than what when where which while who whom whose your yours about into onto over under also just only very more most some such each other these those because after before again here does doing done make made like well much many'.split(' '));
+const FILLERS_EN = ['actually', 'basically', 'literally', 'really', 'very', 'quite', 'just', 'totally', 'simply', 'honestly', 'definitely', 'kind of', 'sort of', 'somehow', 'pretty much', 'in fact', 'of course'];
+// Okunabilirlik ve analiz arayüz dilinin kurallarıyla yapılır: Türkçe → Ateşman, İngilizce → Flesch
+const STOP = EN ? STOP_EN : STOP_TR;
+const FILLERS = EN ? FILLERS_EN : FILLERS_TR;
+const syllables = (w) => (EN
+  ? Math.max(1, (w.toLowerCase().replace(/(?:[^laeiouy]es|ed|[^laeiouy]e)$/, '').replace(/^y/, '').match(/[aeiouy]{1,2}/g) || []).length)
+  : Math.max(1, (w.match(/[aeıioöuüâîû]/gi) || []).length));
 let lastStats = null;
 const hl = { long: false, filler: false, word: null };
 
@@ -1021,19 +1040,19 @@ function computeStats() {
     if (/\p{L}/u.test(t)) sentences.push({ start: m.index + (t.length - t.trimStart().length), end: m.index + t.trimEnd().length, words: (t.match(/[\p{L}\p{N}]+/gu) || []).length });
     if (m[0] === '') re.lastIndex++;
   }
-  const syl = words.reduce((n, w) => n + Math.max(1, (w.match(/[aeıioöuüâîû]/gi) || []).length), 0);
+  const syl = words.reduce((n, w) => n + syllables(w), 0);
   const nw = words.length;
   const ns = Math.max(1, sentences.length);
-  const atesman = nw ? clamp(198.825 - 40.175 * (syl / nw) - 2.61 * (nw / ns), 0, 100) : null;
+  const atesman = !nw ? null : clamp(EN ? 206.835 - 1.015 * (nw / ns) - 84.6 * (syl / nw) : 198.825 - 40.175 * (syl / nw) - 2.61 * (nw / ns), 0, 100);
   const freq = new Map();
   for (const w of words) {
-    const k = trLower(w);
+    const k = lcase(w);
     if (k.length < 4 || STOP.has(k) || /^\d+$/.test(k)) continue;
     freq.set(k, (freq.get(k) || 0) + 1);
   }
   const top = [...freq.entries()].filter(([, c]) => c >= 3).sort((a, b) => b[1] - a[1]).slice(0, 12);
   const longS = sentences.filter((x) => x.words > 25);
-  const lowerText = trLower(text);
+  const lowerText = lcase(text);
   const fillerHits = [];
   for (const f of FILLERS) {
     const fr = new RegExp(`(^|[^\\p{L}])(${f})(?=[^\\p{L}]|$)`, 'gu');
@@ -1049,30 +1068,30 @@ function computeStats() {
   };
 }
 function scheduleStats() { clearTimeout(statsTimer); statsTimer = setTimeout(updateStats, 350); }
-const minutes = (n) => (n < 1 ? '< 1 dk' : `${Math.round(n)} dk`);
+const minutes = (n) => (n < 1 ? T('< 1 dk') : T('{n} dk', { n: Math.round(n) }));
 function readLabel(a) {
   if (a === null) return ['—', 'var(--muted)'];
-  if (a >= 90) return ['Çok kolay', '#16a34a'];
-  if (a >= 70) return ['Kolay', '#22c55e'];
-  if (a >= 50) return ['Orta', '#f59e0b'];
-  if (a >= 30) return ['Zor', '#f97316'];
-  return ['Çok zor', '#dc2626'];
+  if (a >= 90) return [T('Çok kolay'), '#16a34a'];
+  if (a >= 70) return [T('Kolay'), '#22c55e'];
+  if (a >= 50) return [L('Orta', 'Fairly difficult'), '#f59e0b'];
+  if (a >= 30) return [T('Zor'), '#f97316'];
+  return [T('Çok zor'), '#dc2626'];
 }
 function updateStats() {
   if (!doc) return;
   refreshStructure();
   const st = computeStats();
   lastStats = st;
-  $('#stWords').textContent = `${st.words.toLocaleString('tr-TR')} kelime`;
-  $('#stRead').textContent = `📖 ${minutes(st.words / 200)} okuma`;
-  $('#stPages').textContent = `${st.pages} sayfa`;
+  $('#stWords').textContent = T('{n} kelime', { n: st.words.toLocaleString(P.locale) });
+  $('#stRead').textContent = T('📖 {m} okuma', { m: minutes(st.words / 200) });
+  $('#stPages').textContent = T('{n} sayfa', { n: st.pages });
   const goal = doc.goal || 0;
   const g = $('#stGoal');
   g.hidden = !goal;
   if (goal) {
     const p = clamp((st.words / goal) * 100, 0, 100);
     g.style.setProperty('--p', `${p}%`);
-    $('b', g).textContent = `Hedef ${st.words}/${goal}${p >= 100 ? ' 🎉' : ''}`;
+    $('b', g).textContent = `${T('Hedef {a}/{b}', { a: st.words, b: goal })}${p >= 100 ? ' 🎉' : ''}`;
     if (p >= 100 && !doc._goalCelebrated) { doc._goalCelebrated = true; P.toast('Tebrikler! Yazma hedefinize ulaştınız. 🎉'); }
   }
   const [label, color] = readLabel(st.atesman);
@@ -1080,8 +1099,8 @@ function updateStats() {
   $('#insights').innerHTML = `
     <h3>İstatistikler</h3>
     <div class="stat-grid">
-      <div class="stat"><b>${st.words.toLocaleString('tr-TR')}</b><small>kelime</small></div>
-      <div class="stat"><b>${st.chars.toLocaleString('tr-TR')}</b><small>karakter (${st.charsNoSpace.toLocaleString('tr-TR')} boşluksuz)</small></div>
+      <div class="stat"><b>${st.words.toLocaleString(P.locale)}</b><small>kelime</small></div>
+      <div class="stat"><b>${st.chars.toLocaleString(P.locale)}</b><small>${T('karakter ({n} boşluksuz)', { n: st.charsNoSpace.toLocaleString(P.locale) })}</small></div>
       <div class="stat"><b>${st.sentences}</b><small>cümle</small></div>
       <div class="stat"><b>${st.paras}</b><small>paragraf</small></div>
       <div class="stat"><b>${minutes(st.words / 200)}</b><small>okuma süresi</small></div>
@@ -1089,16 +1108,16 @@ function updateStats() {
       <div class="stat"><b>${st.avg.toFixed(1)}</b><small>kelime / cümle</small></div>
       <div class="stat"><b>${session >= 0 ? '+' : ''}${session}</b><small>bu oturumda</small></div>
     </div>
-    <h3>Okunabilirlik (Ateşman)</h3>
+    <h3>${EN ? T('Okunabilirlik (Flesch)') : 'Okunabilirlik (Ateşman)'}</h3>
     <div class="ins-row"><b style="font-size:22px;color:${color}">${st.atesman === null ? '—' : Math.round(st.atesman)}</b><span class="grow"><b style="color:${color}">${label}</b><div class="meter"><i style="width:${st.atesman || 0}%;background:${color}"></i></div></span></div>
-    <p class="hint">Türkçe metinler için geliştirilmiş formül: kısa cümleler ve kısa kelimeler puanı yükseltir.</p>
+    <p class="hint">${EN ? T('İngilizce metinler için Flesch okuma kolaylığı: kısa cümleler ve az heceli kelimeler puanı yükseltir.') : 'Türkçe metinler için geliştirilmiş formül: kısa cümleler ve kısa kelimeler puanı yükseltir.'}</p>
     <h3>Yazım analizi</h3>
     <div class="ins-row"><span class="grow">Uzun cümleler (25+ kelime)</span><b>${st.longS.length}</b><button class="ins-toggle${hl.long ? ' on' : ''}" data-hl="long">Vurgula</button></div>
     <div class="ins-row"><span class="grow">Dolgu kelimeler (aslında, yani…)</span><b>${st.fillerHits.length}</b><button class="ins-toggle${hl.filler ? ' on' : ''}" data-hl="filler">Vurgula</button></div>
-    ${st.top.length ? `<p class="hint">Sık tekrarlanan kelimeler — vurgulamak için tıklayın:</p><div>${st.top.map(([w, c]) => `<span class="word-chip${hl.word === w ? ' on' : ''}" data-word="${esc(w)}">${esc(w)} <i>${c}</i></span>`).join('')}</div>` : '<p class="hint">Sık tekrar eden kelime yok. 👍</p>'}
+    ${st.top.length ? `<p class="hint">Sık tekrarlanan kelimeler — vurgulamak için tıklayın:</p><div translate="no">${st.top.map(([w, c]) => `<span class="word-chip${hl.word === w ? ' on' : ''}" data-word="${esc(w)}">${esc(w)} <i>${c}</i></span>`).join('')}</div>` : '<p class="hint">Sık tekrar eden kelime yok. 👍</p>'}
     ${HAS_HL ? '' : '<p class="hint">Bu tarayıcı vurgulamayı desteklemiyor.</p>'}
     <h3>Hedef</h3>
-    ${goal ? `<div class="meter"><i style="width:${clamp((st.words / goal) * 100, 0, 100)}%;background:var(--ok)"></i></div><p class="hint">${st.words} / ${goal} kelime</p>` : ''}
+    ${goal ? `<div class="meter"><i style="width:${clamp((st.words / goal) * 100, 0, 100)}%;background:var(--ok)"></i></div><p class="hint">${T('{a} / {b} kelime', { a: st.words, b: goal })}</p>` : ''}
     <button class="btn sm" data-ins="goal">${goal ? 'Hedefi değiştir' : 'Kelime hedefi koy'}</button>`;
   applyAnalysisHighlights();
 }
@@ -1109,7 +1128,7 @@ function applyAnalysisHighlights() {
   setHighlight('ew-filler', hl.filler ? st.fillerHits.map((x) => rangeFor(st.idx, x.start, x.end)).filter(Boolean) : null);
   if (hl.word) {
     const ranges = [];
-    const lower = trLower(st.idx.s);
+    const lower = lcase(st.idx.s);
     const re = new RegExp(`(^|[^\\p{L}\\p{N}])(${hl.word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})(?=[^\\p{L}\\p{N}]|$)`, 'gu');
     let m;
     while ((m = re.exec(lower))) { const s0 = m.index + m[1].length; const r = rangeFor(st.idx, s0, s0 + m[2].length); if (r) ranges.push(r); }
@@ -1144,8 +1163,8 @@ function runFind(keepIndex = false) {
   if (q) {
     const idx = textIndex();
     const cs = $('#findCase').checked;
-    const hay = cs ? idx.s : trLower(idx.s);
-    const needle = cs ? q : trLower(q);
+    const hay = cs ? idx.s : lcase(idx.s);
+    const needle = cs ? q : lcase(q);
     let i = hay.indexOf(needle);
     while (i >= 0 && finds.length < 5000) {
       const r = rangeFor(idx, i, i + needle.length);
@@ -1197,7 +1216,7 @@ function replaceAll() {
   for (let i = finds.length - 1; i >= 0; i--) replaceRange(finds[i], t);
   changed();
   runFind();
-  P.toast(`${n} eşleşme değiştirildi.`);
+  P.toast(T('{n} eşleşme değiştirildi.', { n }));
 }
 
 /* ------------------------------------------------------------------ */
@@ -1227,11 +1246,11 @@ function transformSelection(fn) {
   }
   changed();
 }
-const titleCase = (s) => trLower(s).replace(/(^|[\s"“‘(\-–—/])(\p{L})/gu, (m, a, c) => a + trUpper(c));
-const sentenceCase = (s) => trLower(s).replace(/(^\s*|[.!?…]\s+)(\p{L})/gu, (m, a, c) => a + trUpper(c));
+const titleCase = (s) => lcase(s).replace(/(^|[\s"“‘(\-–—/])(\p{L})/gu, (m, a, c) => a + ucase(c));
+const sentenceCase = (s) => lcase(s).replace(/(^\s*|[.!?…]\s+)(\p{L})/gu, (m, a, c) => a + ucase(c));
 
 async function cleanText() {
-  await saveSnap('Temizlik öncesi');
+  await saveSnap(T('Temizlik öncesi'));
   const w = document.createTreeWalker(page(), NodeFilter.SHOW_TEXT);
   let n;
   let count = 0;
@@ -1244,16 +1263,16 @@ async function cleanText() {
   let removed = 0;
   empties.forEach((p) => { const prev = p.previousElementSibling; if (prev && prev.tagName === 'P' && !prev.textContent.trim() && !prev.querySelector('img')) { p.remove(); removed++; } });
   changed();
-  P.toast(`Metin temizlendi: ${count} düzeltme, ${removed} fazla boş paragraf. (Önceki hâl sürüm geçmişinde)`);
+  P.toast(T('Metin temizlendi: {a} düzeltme, {b} fazla boş paragraf. (Önceki hâl sürüm geçmişinde)', { a: count, b: removed }));
 }
 async function sortList() {
   restoreSel();
   const ctx = caretCtx();
   const s = getSelection();
   const list = ctx ? ctx.block.closest('ul, ol') : (s.rangeCount ? closestBlock(s.anchorNode)?.closest('ul, ol') : null);
-  await saveSnap('Sıralama öncesi');
+  await saveSnap(T('Sıralama öncesi'));
   if (list) {
-    const lis = $$(':scope > li', list).sort((a, b) => a.textContent.localeCompare(b.textContent, 'tr', { numeric: true }));
+    const lis = $$(':scope > li', list).sort((a, b) => a.textContent.localeCompare(b.textContent, P.lang, { numeric: true }));
     lis.forEach((li) => list.appendChild(li));
     changed();
     P.toast('Liste sıralandı.');
@@ -1262,7 +1281,7 @@ async function sortList() {
   const blocks = selectedBlocks().filter((b) => b.tagName === 'P' && b.parentNode === page());
   if (blocks.length < 2) { P.toast('Sıralamak için imleci bir listeye koyun veya birden çok paragraf seçin.'); return; }
   const anchor = blocks[blocks.length - 1].nextSibling;
-  blocks.sort((a, b) => a.textContent.localeCompare(b.textContent, 'tr', { numeric: true })).forEach((b) => page().insertBefore(b, anchor));
+  blocks.sort((a, b) => a.textContent.localeCompare(b.textContent, P.lang, { numeric: true })).forEach((b) => page().insertBefore(b, anchor));
   changed();
   P.toast('Paragraflar sıralandı.');
 }
@@ -1309,19 +1328,19 @@ function toggleDictation() {
         const ctx = caretCtx();
         const pre = ctx && ctx.before && !/\s$/.test(ctx.before) ? ' ' : '';
         let t = fin.trim();
-        if (!ctx || !ctx.before.trim() || /[.!?…]\s*$/.test(ctx.before)) t = t.charAt(0).toLocaleUpperCase('tr') + t.slice(1);
+        if (!ctx || !ctx.before.trim() || /[.!?…]\s*$/.test(ctx.before)) t = ucase(t.charAt(0)) + t.slice(1);
         document.execCommand('insertText', false, pre + t);
         saveSel();
         changed();
       }
       st.hidden = false;
-      st.textContent = `🎙 ${tmp || 'Dinleniyor…'}`;
+      st.textContent = `🎙 ${tmp || T('Dinleniyor…')}`;
     },
     onEnd: () => { st.hidden = true; dictation = null; },
   });
   if (!dictation) { P.toast('Bu tarayıcı konuşma tanımayı desteklemiyor (Chrome veya Edge deneyin).'); return; }
   st.hidden = false;
-  st.textContent = '🎙 Dinleniyor…';
+  st.textContent = `🎙 ${T('Dinleniyor…')}`;
   P.toast('Dikte açık: konuşun, metin imlece yazılsın. Durdurmak için tekrar seçin.');
 }
 function stopDictation() { if (dictation) { dictation.stop(); dictation = null; } $('#stDictate').hidden = true; }
@@ -1331,7 +1350,7 @@ function toggleSpeak() {
   if (speechSynthesis.speaking) { speechSynthesis.cancel(); P.toast('Sesli okuma durduruldu.'); return; }
   const sel = getSelection().toString().trim();
   const text = sel || page().innerText;
-  const voice = speechSynthesis.getVoices().find((v) => /^tr/i.test(v.lang));
+  const voice = speechSynthesis.getVoices().find((v) => v.lang.toLowerCase().startsWith(P.lang));
   const chunks = text.match(/[^.!?…\n]+[.!?…]*|\n+/g) || [];
   let buf = '';
   const queue = [];
@@ -1339,7 +1358,7 @@ function toggleSpeak() {
   if (buf.trim()) queue.push(buf);
   queue.filter((q) => q.trim()).forEach((q) => {
     const u = new SpeechSynthesisUtterance(q);
-    u.lang = 'tr-TR';
+    u.lang = P.locale;
     if (voice) u.voice = voice;
     speechSynthesis.speak(u);
   });
@@ -1359,7 +1378,7 @@ function togglePomodoro() {
   const tick = () => {
     if (!pomo) return;
     const left = Math.max(0, pomo.end - Date.now());
-    el.textContent = `${pomo.mode === 'work' ? '🍅 Odak' : '☕ Mola'} ${String(Math.floor(left / 60000)).padStart(2, '0')}:${String(Math.floor(left / 1000) % 60).padStart(2, '0')}`;
+    el.textContent = `${pomo.mode === 'work' ? `🍅 ${T('Odak')}` : `☕ ${T('Mola')}`} ${String(Math.floor(left / 60000)).padStart(2, '0')}:${String(Math.floor(left / 1000) % 60).padStart(2, '0')}`;
     if (!left) {
       beep();
       const next = pomo.mode === 'work' ? 'break' : 'work';
@@ -1408,9 +1427,9 @@ async function saveSnap(label = '') {
   await P.snapshots.save('easywrite', doc.id, doc.title, { title: doc.title, html: doc.html, page: doc.page }, label);
 }
 async function snapshotNamed() {
-  const label = await P.prompt('Sürüm kaydet', `Sürüm ${new Date().toLocaleString('tr-TR', { dateStyle: 'short', timeStyle: 'short' })}`, 'Adlandırılmış sürümler otomatik silinmez.');
+  const label = await P.prompt('Sürüm kaydet', T('Sürüm {date}', { date: new Date().toLocaleString(P.locale, { dateStyle: 'short', timeStyle: 'short' }) }), 'Adlandırılmış sürümler otomatik silinmez.');
   if (label === null) return;
-  await saveSnap(label.trim() || 'Adsız sürüm');
+  await saveSnap(label.trim() || T('Adsız sürüm'));
   P.toast('Sürüm kaydedildi.');
 }
 const plainOf = (html) => {
@@ -1438,12 +1457,12 @@ function diffHtml(a, b) {
   }
   while (i < n) { out += `<del>${esc(A[i])}</del>`; if (A[i].trim()) del++; i++; }
   while (j < m) { out += `<ins>${esc(B[j])}</ins>`; if (B[j].trim()) ins++; j++; }
-  return `<p class="muted"><span style="color:var(--ok)">+${ins} eklendi</span> · <span style="color:var(--danger)">−${del} silindi</span> (kelime)</p><div class="diff">${out.replace(/<\/(del|ins)><\1>/g, '')}</div>`;
+  return `<p class="muted"><span style="color:var(--ok)">${T('+{a} eklendi', { a: ins })}</span> · <span style="color:var(--danger)">${T('−{b} silindi', { b: del })}</span> ${T('(kelime)')}</p><div class="diff" translate="no">${out.replace(/<\/(del|ins)><\1>/g, '')}</div>`;
 }
 async function versions() {
   await saveNow();
   const list = await P.snapshots.list('easywrite', doc.id);
-  const draw = () => (list.length ? `<ul class="p365-list">${list.map((s, k) => `<li><span class="grow"><b>${esc(s.label || 'Otomatik kayıt')}</b><small>${new Date(s.at).toLocaleString('tr-TR', { dateStyle: 'medium', timeStyle: 'short' })}</small></span>
+  const draw = () => (list.length ? `<ul class="p365-list">${list.map((s, k) => `<li><span class="grow"><b translate="no">${esc(s.label || T('Otomatik kayıt'))}</b><small>${new Date(s.at).toLocaleString(P.locale, { dateStyle: 'medium', timeStyle: 'short' })}</small></span>
     <button class="btn sm" data-cmp="${k}">Karşılaştır</button><button class="btn sm primary" data-restore="${k}">Geri yükle</button><button class="btn sm danger" data-del="${k}">🗑</button></li>`).join('')}</ul>` : '<p class="muted">Henüz kayıtlı sürüm yok.</p>');
   const r = await P.dialog({
     title: 'Sürüm geçmişi',
@@ -1459,7 +1478,7 @@ async function versions() {
         $('#vlist', body).innerHTML = draw();
       } else if (b.dataset.cmp) {
         const snap = JSON.parse(list[+b.dataset.cmp].data);
-        $('#vdiff', body).innerHTML = `<h3 style="font-size:14px">“${esc(list[+b.dataset.cmp].label || 'Otomatik kayıt')}” → şimdiki hâl</h3>${diffHtml(plainOf(snap.html), plainOf(serialize()))}`;
+        $('#vdiff', body).innerHTML = `<h3 style="font-size:14px" translate="no">${esc(T('“{label}” → şimdiki hâl', { label: list[+b.dataset.cmp].label || T('Otomatik kayıt') }))}</h3>${diffHtml(plainOf(snap.html), plainOf(serialize()))}`;
       } else if (b.dataset.restore) {
         const snap = JSON.parse(list[+b.dataset.restore].data);
         await saveSnap('');
@@ -1515,7 +1534,7 @@ async function exportAs(kind, d = doc) {
     } else if (kind === 'html') {
       const p = d.page || {};
       const [w] = PAGE_SIZES[p.size] || PAGE_SIZES.A4;
-      const html = `<!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${esc(d.title)}</title><meta name="generator" content="Platform365 EasyWrite ${APP_VERSION}">
+      const html = `<!doctype html><html lang="${P.lang}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${esc(d.title)}</title><meta name="generator" content="Platform365 EasyWrite ${APP_VERSION}">
 <style>${docCss()}
 body{margin:0;background:#f4f5f9;padding:24px 12px}.page{margin:0 auto;max-width:100%;box-sizing:border-box}@media (max-width:840px){.page{padding:24px !important}}</style></head>
 <body><article class="page" style="--page-w:${w}px;--margin:${MARGINS[p.margin] || 96}px;--doc-font:'${esc(p.font || 'Calibri')}';--doc-size:${p.fontSize || 16}px">${d.html}</article></body></html>`;
@@ -1523,7 +1542,7 @@ body{margin:0;background:#f4f5f9;padding:24px 12px}.page{margin:0 auto;max-width
     } else if (kind === 'pdf') printDoc();
   } catch (e) {
     console.error(e);
-    P.toast(`İndirme başarısız: ${e.message}`);
+    P.toast(T('İndirme başarısız: {msg}', { msg: T(e.message) }));
   }
 }
 function printDoc() {
@@ -1557,7 +1576,7 @@ async function sniff(file) {
 async function importFile(file) {
   try {
     const kind = await sniff(file);
-    const base = file.name.replace(/\.[^.]+$/, '') || 'Belge';
+    const base = file.name.replace(/\.[^.]+$/, '') || T('Belge');
     let d;
     if (kind === 'ole') { P.toast('Eski .doc biçimi desteklenmiyor. Word\'de “Farklı Kaydet → .docx” ile kaydedip tekrar deneyin.'); return; }
     if (kind === 'zip') {
@@ -1579,7 +1598,7 @@ async function importFile(file) {
         P.toast('Bu bir sunum dosyası — Present\'te açılıyor…');
         P.inbox.send('present', { kind: 'file', blob: file, name: file.name, type: file.type });
         return;
-      } else throw new Error('Tanınmayan paket');
+      } else throw new Error(T('Tanınmayan paket'));
     } else {
       const text = await file.text();
       if (/\.(md|markdown)$/i.test(file.name)) d = newDoc(base, C.sanitize(C.mdToHtml(text)));
@@ -1596,11 +1615,11 @@ async function importFile(file) {
     }
     if (!d.html) d.html = '<p><br></p>';
     await Store.put(d);
-    P.toast(`“${d.title}” açıldı.`);
+    P.toast(T('“{title}” açıldı.', { title: d.title }));
     openDoc(d.id);
   } catch (e) {
     console.error(e);
-    P.toast(`Dosya açılamadı: ${e.message || 'bilinmeyen hata'}`);
+    P.toast(T('Dosya açılamadı: {msg}', { msg: T(e.message || 'bilinmeyen hata') }));
   }
 }
 
@@ -1654,7 +1673,7 @@ function keysHelp() {
     ['Ctrl+F / Ctrl+H', 'Bul / değiştir'], ['Ctrl+Shift+F', 'Odak modu'], ['Ctrl+Shift+V', 'Biçimsiz yapıştır'], ['Ctrl+Alt+1…3 / 0', 'Başlık 1–3 / Normal'],
     ['Ctrl+Shift+7 / 8 / 9', 'Numaralı / madde / yapılacaklar listesi'], ['Ctrl+S', 'Kaydet'], ['Ctrl+P', 'Yazdır / PDF'],
   ];
-  P.dialog({ title: 'Kısayollar ve hızlı yazma', wide: true, html: `<div class="p365-keys">${rows.map(([a, b]) => `<kbd>${esc(a)}</kbd><span>${esc(b)}</span>`).join('')}</div>` });
+  P.dialog({ title: 'Kısayollar ve hızlı yazma', wide: true, html: `<div class="p365-keys">${rows.map(([a, b]) => `<kbd>${esc(T(a))}</kbd><span>${esc(T(b))}</span>`).join('')}</div>` });
 }
 
 /* ------------------------------------------------------------------ */
@@ -1664,10 +1683,10 @@ function keysHelp() {
 function runTool(t) {
   const tools = {
     focus: toggleFocus,
-    typewriter: () => { settings.typewriter = !settings.typewriter; saveSettings(); P.toast(`Daktilo kaydırma ${settings.typewriter ? 'açık' : 'kapalı'}.`); typewriterScroll(); },
+    typewriter: () => { settings.typewriter = !settings.typewriter; saveSettings(); P.toast(T('Daktilo kaydırma {state}.', { state: T(settings.typewriter ? 'açık' : 'kapalı') })); typewriterScroll(); },
     dictate: toggleDictation, speak: toggleSpeak, pomodoro: togglePomodoro, goal: setGoal,
     find: () => openFind(false),
-    'case-upper': () => transformSelection(trUpper), 'case-lower': () => transformSelection(trLower),
+    'case-upper': () => transformSelection(ucase), 'case-lower': () => transformSelection(lcase),
     'case-title': () => transformSelection(titleCase), 'case-sentence': () => transformSelection(sentenceCase),
     clean: cleanText, sort: sortList, toc: insertToc, 'to-present': toPresent, snapshot: snapshotNamed, page: pageSettings, keys: keysHelp,
   };
@@ -1684,7 +1703,7 @@ function bindEvents() {
   $('#fileImage').addEventListener('change', (e) => { const f = e.target.files[0]; if (f) insertImageFile(f); e.target.value = ''; });
 
   $('#docTitle').addEventListener('input', (e) => { doc.title = e.target.value; scheduleSave(); });
-  $('#docTitle').addEventListener('change', (e) => { doc.title = e.target.value.trim() || 'Adsız belge'; e.target.value = doc.title; scheduleSave(); });
+  $('#docTitle').addEventListener('change', (e) => { doc.title = e.target.value.trim() || T('Adsız belge'); e.target.value = doc.title; scheduleSave(); });
   $('#docTitle').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); page().focus(); } });
 
   $('#btnUndo').addEventListener('click', () => exec('undo'));
@@ -1712,7 +1731,7 @@ function bindEvents() {
     if (b.dataset.cmd) { exec(b.dataset.cmd); return; }
     const acts = {
       checklist: toggleChecklist, link: insertLink, image: () => { saveSel(); $('#fileImage').click(); }, table: insertTable,
-      callout: () => insertCallout('info'), details: () => insertHtmlCaret('<details open><summary>{c}Başlık</summary><p><br></p></details><p><br></p>'),
+      callout: () => insertCallout('info'), details: () => insertHtmlCaret(`<details open><summary>{c}${T('Başlık')}</summary><p><br></p></details><p><br></p>`),
       hr: () => exec('insertHorizontalRule'), pagebreak: () => insertHtmlCaret('<hr data-page-break><p>{c}</p>'), emoji: insertEmoji,
       find: () => openFind(false), focus: toggleFocus,
       panel: () => { const eb = $('.ed-body'); if (window.innerWidth <= 800) eb.classList.toggle('show-insights'); else eb.classList.toggle('no-panels'); },
@@ -1782,7 +1801,7 @@ function bindEvents() {
     if (s.rangeCount && !s.isCollapsed && inPage(s.anchorNode)) {
       const n = (s.toString().match(/[\p{L}\p{N}]+/gu) || []).length;
       st.hidden = !n;
-      st.textContent = `${n} kelime seçili`;
+      st.textContent = T('{n} kelime seçili', { n });
     } else st.hidden = true;
     if (slash && slashQuery() === null) closeSlash();
   });
@@ -1832,7 +1851,7 @@ function bindEvents() {
 
   P.registerCommands([
     { id: 'new', group: 'EasyWrite', title: 'Yeni boş belge', run: () => createDoc('blank') },
-    ...TEMPLATES.filter((t) => t.id !== 'blank').map((t) => ({ id: `tpl-${t.id}`, group: 'Şablon', title: `Yeni: ${t.name}`, keywords: t.desc, run: () => createDoc(t.id) })),
+    ...TEMPLATES.filter((t) => t.id !== 'blank').map((t) => ({ id: `tpl-${t.id}`, group: 'Şablon', title: T('Yeni: {name}', { name: T(t.name) }), keywords: `${t.name} ${t.desc} ${T(t.desc)}`, run: () => createDoc(t.id) })),
     { id: 'open', group: 'Dosya', title: 'Dosya aç (.docx, .md, .txt, .html)', run: () => $('#fileImport').click() },
     { id: 'home', group: 'EasyWrite', title: 'Belgelerim', run: () => { location.hash = ''; } },
     ...[['easywrite', 'EasyWrite dosyası (.easywrite)'], ['docx', 'Word (.docx)'], ['pdf', 'PDF / Yazdır'], ['md', 'Markdown (.md)'], ['html', 'Web sayfası (.html)'], ['txt', 'Düz metin (.txt)']]
@@ -1901,6 +1920,7 @@ function setupApp() {
 
 (async function init() {
   $$('.app-version').forEach((n) => { n.textContent = `v${APP_VERSION}`; });
+  page().lang = P.lang; // yazım denetimi arayüz diliyle başlar
   await Store.open();
   renderTemplates();
   bindEvents();

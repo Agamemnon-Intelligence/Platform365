@@ -21,6 +21,7 @@ if (!app.requestSingleInstanceLock()) { app.quit(); process.exit(0); }
 
 let win = null;
 const pending = []; // Pencere hazır olmadan açılan dosyalar
+let lang = 'tr'; // Arayüz dili; sayfa kendi tercihini bildirince menü yeniden kurulur
 
 // Dosyayı açabilecek uygulama: Present (.present/.pptx) veya EasyWrite (diğerleri)
 const appFor = (name) => (/\.(present|pptx)$/i.test(name) ? 'present' : 'easywrite');
@@ -109,40 +110,68 @@ function createWindow() {
   win.on('closed', () => { win = null; });
 }
 
+const MENU_TEXT = {
+  tr: {
+    file: 'Dosya', home: 'Ana ekran', newDeck: 'Yeni sunum', newDoc: 'Yeni belge', close: 'Pencereyi kapat', quit: 'Çıkış',
+    edit: 'Düzen', undo: 'Geri al', redo: 'Yinele', cut: 'Kes', copy: 'Kopyala', paste: 'Yapıştır', selectAll: 'Tümünü seç',
+    view: 'Görünüm', reload: 'Yenile', devtools: 'Geliştirici araçları', resetZoom: 'Gerçek boyut', zoomIn: 'Yakınlaştır', zoomOut: 'Uzaklaştır', full: 'Tam ekran',
+    language: 'Dil / Language', window: 'Pencere', help: 'Yardım', about: 'Platform365 hakkında', releases: 'Sürümler (GitHub)',
+  },
+  en: {
+    file: 'File', home: 'Home', newDeck: 'New presentation', newDoc: 'New document', close: 'Close window', quit: 'Quit',
+    edit: 'Edit', undo: 'Undo', redo: 'Redo', cut: 'Cut', copy: 'Copy', paste: 'Paste', selectAll: 'Select all',
+    view: 'View', reload: 'Reload', devtools: 'Developer tools', resetZoom: 'Actual size', zoomIn: 'Zoom in', zoomOut: 'Zoom out', full: 'Full screen',
+    language: 'Language / Dil', window: 'Window', help: 'Help', about: 'About Platform365', releases: 'Releases (GitHub)',
+  },
+};
+
 function buildMenu() {
   const isMac = process.platform === 'darwin';
+  const m = MENU_TEXT[lang] || MENU_TEXT.tr;
   const go = (p) => () => win && win.loadURL(`${ORIGIN}/${p}`);
+  const menuCmd = (cmd) => () => win && win.webContents.send('p365:menu', cmd);
   const template = [
     ...(isMac ? [{ role: 'appMenu' }] : []),
     {
-      label: 'Dosya',
+      label: m.file,
       submenu: [
-        { label: 'Ana ekran', accelerator: 'CmdOrCtrl+Shift+H', click: go('') },
-        { label: 'Yeni sunum', accelerator: 'CmdOrCtrl+Shift+P', click: go('present/#/new') },
-        { label: 'Yeni belge', accelerator: 'CmdOrCtrl+Shift+N', click: go('easywrite/#/new') },
+        { label: m.home, accelerator: 'CmdOrCtrl+Shift+H', click: go('') },
+        { label: m.newDeck, accelerator: 'CmdOrCtrl+Shift+P', click: go('present/#/new') },
+        { label: m.newDoc, accelerator: 'CmdOrCtrl+Shift+N', click: go('easywrite/#/new') },
         { type: 'separator' },
-        isMac ? { role: 'close', label: 'Pencereyi kapat' } : { role: 'quit', label: 'Çıkış' },
+        isMac ? { role: 'close', label: m.close } : { role: 'quit', label: m.quit },
       ],
     },
-    { label: 'Düzen', submenu: [
-      { role: 'undo', label: 'Geri al' }, { role: 'redo', label: 'Yinele' }, { type: 'separator' },
-      { role: 'cut', label: 'Kes' }, { role: 'copy', label: 'Kopyala' }, { role: 'paste', label: 'Yapıştır' },
-      { role: 'selectAll', label: 'Tümünü seç' },
+    { label: m.edit, submenu: [
+      { role: 'undo', label: m.undo }, { role: 'redo', label: m.redo }, { type: 'separator' },
+      { role: 'cut', label: m.cut }, { role: 'copy', label: m.copy }, { role: 'paste', label: m.paste },
+      { role: 'selectAll', label: m.selectAll },
     ] },
-    { label: 'Görünüm', submenu: [
-      { role: 'reload', label: 'Yenile' }, { role: 'toggleDevTools', label: 'Geliştirici araçları' }, { type: 'separator' },
-      { role: 'resetZoom', label: 'Gerçek boyut' }, { role: 'zoomIn', label: 'Yakınlaştır' }, { role: 'zoomOut', label: 'Uzaklaştır' },
-      { type: 'separator' }, { role: 'togglefullscreen', label: 'Tam ekran' },
+    { label: m.view, submenu: [
+      { role: 'reload', label: m.reload }, { role: 'toggleDevTools', label: m.devtools }, { type: 'separator' },
+      { role: 'resetZoom', label: m.resetZoom }, { role: 'zoomIn', label: m.zoomIn }, { role: 'zoomOut', label: m.zoomOut },
+      { type: 'separator' }, { role: 'togglefullscreen', label: m.full }, { type: 'separator' },
+      { label: m.language, submenu: [
+        { label: 'Türkçe', type: 'radio', checked: lang === 'tr', click: menuCmd('lang-tr') },
+        { label: 'English', type: 'radio', checked: lang === 'en', click: menuCmd('lang-en') },
+      ] },
     ] },
-    { role: 'windowMenu', label: 'Pencere' },
-    { role: 'help', label: 'Yardım', submenu: [
-      { label: 'Sürümler (GitHub)', click: () => shell.openExternal('https://github.com/Agamemnon-Intelligence/Platform365/releases') },
+    { role: 'windowMenu', label: m.window },
+    { role: 'help', label: m.help, submenu: [
+      { label: m.about, click: menuCmd('about') },
+      { label: m.releases, click: () => shell.openExternal('https://github.com/Agamemnon-Intelligence/Platform365/releases') },
     ] },
   ];
   Menu.setApplicationMenu(Menu.buildFromTemplate(template));
 }
 
+// Sayfa arayüz dilini bildirince menüyü o dilde yeniden kur
+ipcMain.on('p365:lang', (e, l) => {
+  if ((l === 'tr' || l === 'en') && l !== lang) { lang = l; buildMenu(); }
+});
+
 app.whenReady().then(() => {
+  app.setAboutPanelOptions({ applicationName: 'Platform365', applicationVersion: app.getVersion(), copyright: '© 2026 Platform365 (Athene Softworks and Platform365 Technologies) · MIT' });
   serve();
   buildMenu();
   createWindow();

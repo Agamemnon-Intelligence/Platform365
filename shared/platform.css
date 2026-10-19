@@ -230,3 +230,45 @@ kbd {
 .p365-download p { margin: 0; line-height: 1.5; }
 .p365-dl-buttons { display: grid; gap: 8px; width: 100%; max-width: 340px; }
 .p365-dl-buttons .btn { justify-content: center; text-decoration: none; }
+
+/* Dil seçimi */
+.p365-lang { display: grid; justify-items: center; gap: 14px; text-align: center; }
+.p365-lang p { margin: 0; line-height: 1.5; }
+.p365-lang .small, .p365-about .small { font-size: 12px; }
+.p365-lang-opts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; }
+.p365-lang-opt {
+  display: flex; align-items: center; gap: 12px; text-align: left; padding: 14px; border-radius: 12px;
+  border: 2px solid var(--border); background: var(--panel-2); transition: border-color .12s, transform .12s;
+}
+.p365-lang-opt:hover, .p365-lang-opt:focus-visible { border-color: var(--accent); transform: translateY(-1px); outline: none; }
+.p365-lang-opt.on { border-color: var(--accent); background: var(--accent-soft); }
+.p365-lang-opt .flag { font-size: 30px; line-height: 1; }
+.p365-lang-opt b { display: block; font-size: 16px; }
+.p365-lang-opt small { color: var(--muted); font-size: 12px; }
+@media (max-width: 420px) { .p365-lang-opts { grid-template-columns: 1fr; } }
+
+/* Hakkında */
+.p365-about { display: grid; gap: 14px; }
+.p365-about p { margin: 0; line-height: 1.55; }
+.p365-about-head { display: flex; align-items: center; gap: 14px; }
+.p365-about-head h3 { margin: 0; font-size: 22px; background: var(--p365); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.p365-about-ver { color: var(--muted); font-size: 13px; display: flex; align-items: center; gap: 8px; margin-top: 2px !important; }
+.p365-ver-pill { display: inline-block; background: var(--p365); color: #fff; font-weight: 700; font-size: 12px; padding: 2px 9px; border-radius: 99px; letter-spacing: .2px; }
+.p365-about-apps { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.p365-about-apps a {
+  display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: 10px; border: 1px solid var(--border);
+  background: var(--panel-2); color: inherit; text-decoration: none;
+}
+.p365-about-apps a:hover { border-color: var(--accent); }
+.p365-about-apps .ico { width: 34px; height: 34px; border-radius: 9px; display: grid; place-items: center; color: #fff; font-weight: 800; flex-shrink: 0; }
+.p365-about-apps b { display: block; }
+.p365-about-apps small { color: var(--muted); font-size: 12px; }
+.p365-about-facts { display: grid; grid-template-columns: auto 1fr; gap: 6px 16px; margin: 0; font-size: 13px; }
+.p365-about-facts dt { color: var(--muted); }
+.p365-about-facts dd { margin: 0; font-weight: 500; }
+.p365-about-new { background: var(--accent-soft); border-radius: 10px; padding: 10px 14px; font-size: 13px; }
+.p365-about-new ul { margin: 6px 0 0; padding-left: 18px; line-height: 1.6; }
+.p365-about-links { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; }
+.p365-about-links a { color: var(--accent); font-weight: 600; text-decoration: none; }
+.p365-about-links a:hover { text-decoration: underline; }
+@media (max-width: 480px) { .p365-about-apps { grid-template-columns: 1fr; } }

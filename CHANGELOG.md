@@ -1,5 +1,14 @@
 # Değişiklik Günlüğü
 
+## 3.0.0 — 2026-10-19 — İngilizce arayüz
+
+- **İngilizce dil desteği:** Platform365 ana ekranı, Present ve EasyWrite'ın tüm arayüzü (menüler, iletişim kutuları, bildirimler, komut paleti, kısayol listeleri, masaüstü uygulama menüsü) Türkçe ve İngilizce
+- **İlk açılışta dil seçimi:** Uygulama ilk açıldığında Türkçe / English sorulur; sonradan uygulama değiştiriciden (▦), ana ekrandaki 🌐 düğmesinden, Ctrl+K komut paletinden veya masaüstünde Görünüm → Dil menüsünden değiştirilebilir
+- İngilizce seçildiğinde yeni slaytlar, şablonlar (mektup, özgeçmiş, toplantı notu, rapor, makale, proje planı, günlük), tarih/sayı biçimleri, dikte, canlı altyazı ve sesli okuma da İngilizce olur; EasyWrite okunabilirlik analizi Flesch puanı ve İngilizce dolgu kelimeleriyle çalışır
+- **Platform365 hakkında:** sürüm, yayıncı, lisans, çalışma ortamı, bağlantılar ve sürüm notları — ana ekranda ayrı bölüm, her uygulamada ▦ menüsünden ve masaüstünde Yardım menüsünden pencere olarak
+- **Yenilenen ana ekran:** sürüm rozeti, büyük karşılama alanı ve dosya sayıları, açıklamalı uygulama kartları, şablonlarla **hızlı başlangıç**, yeni özellik kartları ve düzenlenmiş veri / yedekleme bölümü
+- Kullanıcı içeriği (slaytlar, belge metni, dosya adları) arayüz dili değişince asla çevrilmez
+
 ## 2.1.0 — 2026-10-17 — Masaüstü uygulaması
 
 - **Windows (.exe) ve macOS (.dmg) masaüstü uygulaması** (Electron): kendi penceresi, Türkçe menü, çevrimdışı çalışma, .pptx / .present / .docx / .easywrite / .md dosya ilişkilendirmeleri (çift tıklayınca doğru uygulamada açılır), tek pencere

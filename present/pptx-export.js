@@ -64,7 +64,7 @@ const PptxExport = (() => {
     const italic = r.italic !== undefined ? r.italic : t.italic;
     const underline = r.underline !== undefined ? r.underline : t.underline;
     const font = xmlEsc(r.font || t.font || 'Arial');
-    let a = ` lang="tr-TR" sz="${sz(size)}" b="${bold ? 1 : 0}" i="${italic ? 1 : 0}"`;
+    let a = ` lang="${P365.locale}" sz="${sz(size)}" b="${bold ? 1 : 0}" i="${italic ? 1 : 0}"`;
     if (underline) a += ' u="sng"';
     if (r.strike) a += ' strike="sngStrike"';
     if (r.caps) a += ' cap="all"';
@@ -157,7 +157,7 @@ const PptxExport = (() => {
       const cells = r.cells.map((c) => {
         if (c.hidden) {
           const m = c.hidden === 'v' ? ' vMerge="1"' : ' hMerge="1"';
-          return `<a:tc${m}><a:txBody><a:bodyPr/><a:lstStyle/><a:p><a:endParaRPr lang="tr-TR"/></a:p></a:txBody><a:tcPr/></a:tc>`;
+          return `<a:tc${m}><a:txBody><a:bodyPr/><a:lstStyle/><a:p><a:endParaRPr lang="${P365.locale}"/></a:p></a:txBody><a:tcPr/></a:tc>`;
         }
         let a = '';
         if (c.colspan > 1) a += ` gridSpan="${c.colspan}"`;

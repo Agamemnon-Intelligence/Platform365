@@ -1,6 +1,6 @@
 name: Release (Windows .exe + macOS .dmg)
 
-# v* etiketi gönderildiğinde (ör. git tag v2.1.0 && git push origin v2.1.0) ya da
+# v* etiketi gönderildiğinde (ör. git tag v3.0.0 && git push origin v3.0.0) ya da
 # Actions sekmesinden elle çalıştırıldığında masaüstü uygulamalarını derler ve
 # GitHub Releases'a yükler.
 on:

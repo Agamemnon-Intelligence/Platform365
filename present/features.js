@@ -6,6 +6,7 @@
 const Fx = (() => {
   const P = window.P365;
   const C = window.Convert;
+  const { t: T, L } = P;
 
   /* ---------------- Ana hat → slaytlar ---------------- */
   function slidesFromOutline(outline, t) {
@@ -23,7 +24,7 @@ const Fx = (() => {
       for (let k = 0; k < s.bullets.length; k += 7) {
         const part = s.bullets.slice(k, k + 7);
         const sl = makeSlide('content', t);
-        sl.elements[0].text = (k ? `${s.title} (devam)` : s.title) || ' ';
+        sl.elements[0].text = (k ? T('{title} (devam)', { title: s.title }) : s.title) || ' ';
         const body = sl.elements[2];
         const chars = part.reduce((n, b) => n + b.text.length, 0);
         body.fontSize = Math.round(clamp(26 - Math.max(0, part.length - 5) * 2 - Math.max(0, (chars - 280) / 50), 14, 26));
@@ -37,15 +38,15 @@ const Fx = (() => {
   }
 
   async function createDeckFromOutline(title, outline) {
-    const d = newDeck(title || 'Yeni sunum');
+    const d = newDeck(title || T('Yeni sunum'));
     const t = themeById(d.theme);
     const first = d.slides[0];
     first.elements[0].text = d.title;
-    first.elements[2].text = new Date().toLocaleDateString('tr-TR', { dateStyle: 'long' });
+    first.elements[2].text = new Date().toLocaleDateString(P.locale, { dateStyle: 'long' });
     d.slides.push(...slidesFromOutline(outline, t));
     await Store.put(d);
     location.hash = `#/d/${d.id}`;
-    P.toast(`${d.slides.length} slaytlık sunum hazırlandı.`);
+    P.toast(T('{n} slaytlık sunum hazırlandı.', { n: d.slides.length }));
   }
 
   function appendOutline(outline) {
@@ -55,16 +56,18 @@ const Fx = (() => {
     cur += 1;
     selId = null;
     commit();
-    P.toast(`${added.length} slayt eklendi.`);
+    P.toast(T('{n} slayt eklendi.', { n: added.length }));
   }
 
   async function outlineDialog(newDeckMode = !deck) {
-    const sample = '# Proje planı\n- Hedefler\n- Zaman çizelgesi\n  - Ekim: tasarım\n  - Kasım: geliştirme\n> Konuşmacı notu: süreyi vurgula\n\n# Sonuç\n- Sorular?';
+    const sample = L('# Proje planı\n- Hedefler\n- Zaman çizelgesi\n  - Ekim: tasarım\n  - Kasım: geliştirme\n> Konuşmacı notu: süreyi vurgula\n\n# Sonuç\n- Sorular?',
+      '# Project plan\n- Goals\n- Timeline\n  - October: design\n  - November: development\n> Speaker note: stress the deadline\n\n# Wrap-up\n- Questions?');
     const r = await P.dialog({
       title: newDeckMode ? 'Metinden sunum oluştur' : 'Metinden slayt ekle',
       wide: true,
-      html: `<p class="muted">Her <b>başlık satırı</b> (veya <code>#</code> ile başlayan satır) yeni bir slayt olur. <code>-</code> ile başlayan ya da girintili satırlar madde olur, <code>&gt;</code> ile başlayanlar konuşmacı notuna gider. Yedi maddeden uzun slaytlar otomatik bölünür ve yazı boyutu içeriğe göre ayarlanır.</p>
-        ${newDeckMode ? '<p><input type="text" id="olTitle" placeholder="Sunum adı" value="Yeni sunum"></p>' : ''}
+      html: `<p class="muted">${L('Her <b>başlık satırı</b> (veya <code>#</code> ile başlayan satır) yeni bir slayt olur. <code>-</code> ile başlayan ya da girintili satırlar madde olur, <code>&gt;</code> ile başlayanlar konuşmacı notuna gider. Yedi maddeden uzun slaytlar otomatik bölünür ve yazı boyutu içeriğe göre ayarlanır.',
+        'Every <b>heading line</b> (or line starting with <code>#</code>) becomes a new slide. Lines starting with <code>-</code> or indented lines become bullets, and lines starting with <code>&gt;</code> go to the speaker notes. Slides with more than seven bullets are split automatically and the font size adapts to the content.')}</p>
+        ${newDeckMode ? `<p><input type="text" id="olTitle" placeholder="${T('Sunum adı')}" value="${T('Yeni sunum')}"></p>` : ''}
         <textarea id="olText" rows="14" placeholder="${P.esc(sample)}"></textarea>
         <p><button class="btn sm" type="button" data-sample>Örnek doldur</button></p>`,
       actions: [{ label: 'Vazgeç', value: null }, { label: 'Oluştur', primary: true, value: (b) => ({ text: b.querySelector('#olText').value, title: b.querySelector('#olTitle')?.value }) }],
@@ -75,7 +78,7 @@ const Fx = (() => {
   function finishOutline(newDeckMode, text, title) {
     const outline = C.outlineFromText(text);
     if (!outline.length) { P.toast('Metin boş görünüyor.'); return; }
-    if (newDeckMode) createDeckFromOutline((title || '').trim() || outline[0].title || 'Yeni sunum', outline);
+    if (newDeckMode) createDeckFromOutline((title || '').trim() || outline[0].title || T('Yeni sunum'), outline);
     else appendOutline(outline);
   }
 
@@ -87,8 +90,8 @@ const Fx = (() => {
     if (!docs.length) { P.toast('Henüz EasyWrite belgesi yok.'); return; }
     const id = await P.dialog({
       title: 'EasyWrite belgesinden slayt',
-      html: `<p class="muted">Belgedeki Başlık 1 / Başlık 2'ler slayt başlığı, altındaki paragraflar ve maddeler slayt maddesi olur.</p>
-        <ul class="p365-list">${docs.map((d) => `<li><span class="grow"><b>${P.esc(d.title)}</b><small>${P.relTime(d.updated)}</small></span><button class="btn sm primary" data-id="${d.id}">Ekle</button></li>`).join('')}</ul>`,
+      html: `<p class="muted">${L("Belgedeki Başlık 1 / Başlık 2'ler slayt başlığı, altındaki paragraflar ve maddeler slayt maddesi olur.", 'Heading 1 / Heading 2 in the document become slide titles; the paragraphs and list items below them become bullets.')}</p>
+        <ul class="p365-list">${docs.map((d) => `<li><span class="grow"><b translate="no">${P.esc(d.title)}</b><small>${P.relTime(d.updated)}</small></span><button class="btn sm primary" data-id="${d.id}">Ekle</button></li>`).join('')}</ul>`,
       actions: [{ label: 'Vazgeç', value: null }],
       onOpen: (body, close) => body.addEventListener('click', (e) => { const b = e.target.closest('[data-id]'); if (b) close(b.dataset.id); }),
     });
@@ -141,38 +144,38 @@ const Fx = (() => {
       let words = 0;
       let hasText = false;
       for (const e of s.elements) {
-        const name = { text: 'Metin', image: 'Görsel', table: 'Tablo', shape: 'Şekil', rect: 'Dikdörtgen', ellipse: 'Elips' }[e.type] || 'Öğe';
-        if (e.x + e.w < 4 || e.y + e.h < 4 || e.x > W - 4 || e.y > H - 4) issues.push({ sev: 'err', i, id: e.id, msg: `${name} slaytın tamamen dışında` });
-        else if (e.x < -2 || e.y < -2 || e.x + e.w > W + 2 || e.y + e.h > H + 2) issues.push({ sev: 'warn', i, id: e.id, msg: `${name} slayt kenarından taşıyor` });
+        const name = T({ text: 'Metin', image: 'Görsel', table: 'Tablo', shape: 'Şekil', rect: 'Dikdörtgen', ellipse: 'Elips' }[e.type] || 'Öğe');
+        if (e.x + e.w < 4 || e.y + e.h < 4 || e.x > W - 4 || e.y > H - 4) issues.push({ sev: 'err', i, id: e.id, msg: T('{name} slaytın tamamen dışında', { name }) });
+        else if (e.x < -2 || e.y < -2 || e.x + e.w > W + 2 || e.y + e.h > H + 2) issues.push({ sev: 'warn', i, id: e.id, msg: T('{name} slayt kenarından taşıyor', { name }) });
         for (const t of textTargets(e)) {
           const txt = plain(t);
           if (t.font) fonts.add(t.font);
           (t.paras || []).forEach((p) => p.runs.forEach((r) => r.font && fonts.add(r.font)));
-          if (!txt.trim()) { if (e.type === 'text') issues.push({ sev: 'info', i, id: e.id, msg: 'Boş metin kutusu' }); continue; }
+          if (!txt.trim()) { if (e.type === 'text') issues.push({ sev: 'info', i, id: e.id, msg: T('Boş metin kutusu') }); continue; }
           hasText = true;
           words += txt.split(/\s+/).filter(Boolean).length;
           const size = Math.min(t.fontSize, ...(t.paras || []).flatMap((p) => p.runs.map((r) => r.size || p.size || t.fontSize)));
-          if (size < 14) issues.push({ sev: 'warn', i, id: e.id, msg: `Çok küçük yazı (${Math.round(size)} px) — arkadan okunmaz` });
+          if (size < 14) issues.push({ sev: 'warn', i, id: e.id, msg: T('Çok küçük yazı ({n} px) — arkadan okunmaz', { n: Math.round(size) }) });
           const bg = t.fill || (e.type === 'text' && e.fill) || (!s.bgImg && !(s.bgGrad && s.bgGrad.stops) ? s.bg : null);
           const ratio = bg ? contrast(t.color, bg) : null;
           if (ratio !== null) {
             const need = t.fontSize >= 24 || t.bold ? 3 : 4.5;
-            if (ratio < need) issues.push({ sev: ratio < 2 ? 'err' : 'warn', i, id: e.id, msg: `Düşük kontrast ${ratio.toFixed(1)}:1 (en az ${need}:1 önerilir) — “${txt.trim().slice(0, 30)}”` });
+            if (ratio < need) issues.push({ sev: ratio < 2 ? 'err' : 'warn', i, id: e.id, msg: T('Düşük kontrast {r}:1 (en az {need}:1 önerilir) — “{txt}”', { r: ratio.toFixed(1), need, txt: txt.trim().slice(0, 30) }) });
           }
         }
       }
-      if (words > 80) issues.push({ sev: 'warn', i, msg: `Kalabalık slayt: ${words} kelime (40'ın altı önerilir)` });
-      if (!hasText && !s.elements.some((e) => e.type === 'image')) issues.push({ sev: 'info', i, msg: 'Slaytta metin veya görsel yok' });
+      if (words > 80) issues.push({ sev: 'warn', i, msg: T("Kalabalık slayt: {n} kelime (40'ın altı önerilir)", { n: words }) });
+      if (!hasText && !s.elements.some((e) => e.type === 'image')) issues.push({ sev: 'info', i, msg: T('Slaytta metin veya görsel yok') });
     });
-    if (fonts.size > 4) issues.push({ sev: 'warn', i: 0, msg: `Sunumda ${fonts.size} farklı yazı tipi var (${[...fonts].slice(0, 6).join(', ')}) — tutarlılık için 2–3 önerilir` });
-    if (deck.slides.length > 1 && deck.slides.every((s) => !s.notes)) issues.push({ sev: 'info', i: 0, msg: 'Hiçbir slaytta konuşmacı notu yok' });
+    if (fonts.size > 4) issues.push({ sev: 'warn', i: 0, msg: T('Sunumda {n} farklı yazı tipi var ({list}) — tutarlılık için 2–3 önerilir', { n: fonts.size, list: [...fonts].slice(0, 6).join(', ') }) });
+    if (deck.slides.length > 1 && deck.slides.every((s) => !s.notes)) issues.push({ sev: 'info', i: 0, msg: T('Hiçbir slaytta konuşmacı notu yok') });
     const score = Math.max(0, 100 - issues.reduce((n, x) => n + ({ err: 12, warn: 5, info: 1 }[x.sev]), 0));
     const icon = { err: '<span class="sev-err">●</span>', warn: '<span class="sev-warn">●</span>', info: '<span class="muted">○</span>' };
     P.dialog({
       title: 'Sunum sağlık kontrolü',
       wide: true,
-      html: `<p><b style="font-size:28px" class="${score >= 85 ? 'sev-ok' : score >= 60 ? 'sev-warn' : 'sev-err'}">${score}</b><span class="muted"> / 100 puan · ${deck.slides.length} slayt · ${issues.length} bulgu</span></p>
-        ${issues.length ? `<ul class="p365-list">${issues.map((x, k) => `<li>${icon[x.sev]}<span class="grow">${P.esc(x.msg)}<small>Slayt ${x.i + 1}</small></span><button class="btn sm" data-k="${k}">Git</button></li>`).join('')}</ul>` : '<p class="sev-ok">Harika! Sorun bulunamadı. 🎉</p>'}`,
+      html: `<p><b style="font-size:28px" class="${score >= 85 ? 'sev-ok' : score >= 60 ? 'sev-warn' : 'sev-err'}">${score}</b><span class="muted">${T(' / 100 puan · {n} slayt · {k} bulgu', { n: deck.slides.length, k: issues.length })}</span></p>
+        ${issues.length ? `<ul class="p365-list">${issues.map((x, k) => `<li>${icon[x.sev]}<span class="grow">${P.esc(x.msg)}<small>${T('Slayt {n}', { n: x.i + 1 })}</small></span><button class="btn sm" data-k="${k}">Git</button></li>`).join('')}</ul>` : '<p class="sev-ok">Harika! Sorun bulunamadı. 🎉</p>'}`,
       onOpen: (body, close) => body.addEventListener('click', (e) => {
         const b = e.target.closest('[data-k]');
         if (!b) return;
@@ -203,10 +206,10 @@ const Fx = (() => {
     } catch (e) { /* depolama yoksa sürüm yok */ }
   }
   async function saveSnapshot() {
-    const label = await P.prompt('Sürüm kaydet', `Sürüm ${new Date().toLocaleString('tr-TR', { dateStyle: 'short', timeStyle: 'short' })}`, 'Adlandırılmış sürümler otomatik silinmez.');
+    const label = await P.prompt('Sürüm kaydet', T('Sürüm {date}', { date: new Date().toLocaleString(P.locale, { dateStyle: 'short', timeStyle: 'short' }) }), 'Adlandırılmış sürümler otomatik silinmez.');
     if (label === null) return;
     await saveNow();
-    await P.snapshots.save('present', deck.id, deck.title, deck, label.trim() || 'Adsız sürüm');
+    await P.snapshots.save('present', deck.id, deck.title, deck, label.trim() || T('Adsız sürüm'));
     P.toast('Sürüm kaydedildi.');
   }
   async function versions() {
@@ -214,7 +217,7 @@ const Fx = (() => {
     const list = await P.snapshots.list('present', deck.id);
     const draw = () => (list.length ? `<ul class="p365-list">${list.map((s, k) => {
       const n = (() => { try { return JSON.parse(s.data).slides.length; } catch (e) { return '?'; } })();
-      return `<li><span class="grow"><b>${P.esc(s.label || 'Otomatik kayıt')}</b><small>${new Date(s.at).toLocaleString('tr-TR', { dateStyle: 'medium', timeStyle: 'short' })} · ${n} slayt</small></span>
+      return `<li><span class="grow"><b translate="no">${P.esc(s.label || T('Otomatik kayıt'))}</b><small>${new Date(s.at).toLocaleString(P.locale, { dateStyle: 'medium', timeStyle: 'short' })} · ${T('{n} slayt', { n })}</small></span>
         <button class="btn sm" data-prev="${k}">Önizle</button><button class="btn sm primary" data-restore="${k}">Geri yükle</button><button class="btn sm danger" data-del="${k}">🗑</button></li>`;
     }).join('')}</ul>` : '<p class="muted">Henüz kayıtlı sürüm yok.</p>');
     await P.dialog({
@@ -260,7 +263,7 @@ const Fx = (() => {
   function exportHtml() {
     const slides = deck.slides.map((s) => { const n = slideNode(s); return n.outerHTML; }).join('\n');
     const notes = JSON.stringify(deck.slides.map((s) => s.notes || ''));
-    const html = `<!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+    const html = `<!doctype html><html lang="${P.lang}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${P.esc(deck.title)}</title><meta name="generator" content="Platform365 Present ${APP_VERSION}">
 <style>${presentCss()}
 html,body{margin:0;height:100%;background:#000;overflow:hidden;font-family:system-ui,sans-serif}
@@ -284,7 +287,7 @@ addEventListener('resize',fit);fit();show()})();<\/script></body></html>`;
     const ol = deckOutline();
     let md = `# ${deck.title}\n\n`;
     ol.forEach((s, i) => {
-      md += `## ${s.title || `Slayt ${i + 1}`}\n\n`;
+      md += `## ${s.title || T('Slayt {n}', { n: i + 1 })}\n\n`;
       s.bullets.forEach((b) => { md += `${'  '.repeat(b.lvl)}- ${b.text}\n`; });
       if (s.bullets.length) md += '\n';
       if (s.notes) md += `${s.notes.split('\n').map((l) => `> ${l}`).join('\n')}\n\n`;
@@ -442,15 +445,15 @@ addEventListener('resize',fit);fit();show()})();<\/script></body></html>`;
     const max = Math.max(...timings, 1);
     const ol = deckOutline();
     P.dialog({
-      title: `Prova sonucu — toplam ${fmt(total)}`,
+      title: T('Prova sonucu — toplam {t}', { t: fmt(total) }),
       wide: true,
-      html: `<p class="muted">Ortalama slayt süresi ${fmt(total / Math.max(1, timings.filter(Boolean).length))}. Uzun kalan slaytlar kırmızıyla işaretlidir.</p>
-        <ul class="p365-list">${timings.map((t, i) => `<li><span style="width:28px" class="muted">${i + 1}</span><span class="grow">${P.esc(ol[i]?.title || `Slayt ${i + 1}`)}
-        <span class="rh-bar"><i style="width:${(t / max) * 100}%;background:${t > (total / timings.length) * 1.8 ? 'var(--danger)' : 'var(--accent)'}"></i></span></span><b>${fmt(t)}</b></li>`).join('')}</ul>`,
+      html: `<p class="muted">${T('Ortalama slayt süresi {t}. Uzun kalan slaytlar kırmızıyla işaretlidir.', { t: fmt(total / Math.max(1, timings.filter(Boolean).length)) })}</p>
+        <ul class="p365-list">${timings.map((ms, i) => `<li><span style="width:28px" class="muted">${i + 1}</span><span class="grow" translate="no">${P.esc(ol[i]?.title || T('Slayt {n}', { n: i + 1 }))}
+        <span class="rh-bar"><i style="width:${(ms / max) * 100}%;background:${ms > (total / timings.length) * 1.8 ? 'var(--danger)' : 'var(--accent)'}"></i></span></span><b>${fmt(ms)}</b></li>`).join('')}</ul>`,
       actions: [{ label: 'Sürelerini notlara yaz', value: 'notes' }, { label: 'Kapat', primary: true, value: null }],
     }).then((r) => {
       if (r !== 'notes') return;
-      deck.slides.forEach((s, i) => { s.notes = `${(s.notes || '').replace(/\n?⏱ Prova: \d\d:\d\d$/, '')}\n⏱ Prova: ${fmt(timings[i])}`.trim(); });
+      deck.slides.forEach((s, i) => { s.notes = `${(s.notes || '').replace(/\n?⏱ (Prova|Rehearsal): \d\d:\d\d$/, '')}\n⏱ ${T('Prova')}: ${fmt(timings[i])}`.trim(); });
       commit();
       P.toast('Süreler konuşmacı notlarına eklendi.');
     });
@@ -544,7 +547,7 @@ addEventListener('resize',fit);fit();show()})();<\/script></body></html>`;
       ['E', 'Bu slayttaki çizimleri sil'], ['B / W', 'Siyah / beyaz ekran'], ['G', 'Slayt ızgarası'], ['C', 'Canlı altyazı (konuşma → yazı)'],
       ['T', 'Zamanlayıcıyı sıfırla'], ['Sayı + Enter', 'O slayta git'], ['Esc', 'Aracı kapat / sunumdan çık'],
     ];
-    P.dialog({ title: 'Klavye kısayolları', html: `<div class="p365-keys">${rows.map(([a, b]) => (b ? `<kbd>${P.esc(a)}</kbd><span>${P.esc(b)}</span>` : `<b style="grid-column:1/3;margin-top:8px">${P.esc(a)}</b>`)).join('')}</div>` });
+    P.dialog({ title: 'Klavye kısayolları', html: `<div class="p365-keys">${rows.map(([a, b]) => (b ? `<kbd>${P.esc(T(a))}</kbd><span>${P.esc(T(b))}</span>` : `<b style="grid-column:1/3;margin-top:8px">${P.esc(T(a))}</b>`)).join('')}</div>` });
   }
 
   /* ---------------- Gelen kutusu ---------------- */
@@ -608,7 +611,7 @@ addEventListener('resize',fit);fit();show()})();<\/script></body></html>`;
       { id: 'dl-pptx', group: 'İndir', title: 'PowerPoint (.pptx)', when: inEd, run: async () => { await saveNow(); exportFile(deck, 'pptx'); } },
       { id: 'dl-html', group: 'İndir', title: 'Web sayfası (.html)', when: inEd, run: exportHtml },
       { id: 'dl-md', group: 'İndir', title: 'Ana hat (.md)', when: inEd, run: exportMarkdown },
-      ...THEMES.map((t) => ({ id: `theme-${t.id}`, group: 'Tema', title: `Slayt teması: ${t.name}`, when: inEd, run: () => applyTheme(t.id) })),
+      ...THEMES.map((th) => ({ id: `theme-${th.id}`, group: 'Tema', title: T('Slayt teması: {name}', { name: T(th.name) }), keywords: th.name, when: inEd, run: () => applyTheme(th.id) })),
       { id: 'dark', group: 'Görünüm', title: 'Uygulama temasını değiştir (aydınlık / karanlık)', run: P.cycleTheme },
       { id: 'keys', group: 'Yardım', title: 'Klavye kısayolları', run: keysHelp },
       { id: 'go-hub', group: 'Platform365', title: 'Ana ekran', run: () => { location.href = P.ROOT; } },

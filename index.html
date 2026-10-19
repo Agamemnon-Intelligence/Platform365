@@ -14,6 +14,7 @@
   </script>
   <link rel="stylesheet" href="shared/platform.css">
   <link rel="stylesheet" href="hub.css">
+  <script src="shared/i18n.js"></script>
   <script src="shared/platform.js" data-root="./"></script>
 </head>
 <body class="app-hub">
@@ -21,29 +22,56 @@
     <a class="brand" href="./" title="Platform365 ana ekran">
       <img src="icons/platform365.svg" alt="" width="28" height="28">
       <span class="p365-name">Platform365</span>
+      <span class="ver-badge" id="verBadge"></span>
     </a>
     <div class="spacer"></div>
     <div class="top-actions">
       <button class="btn ghost" id="btnPalette" title="Komut paleti (Ctrl+K)">⌘</button>
+      <button class="btn ghost lang-btn" id="btnLang" title="Dil / Language">🌐<span class="lbl" id="langLbl"></span></button>
       <button class="btn ghost" id="btnTheme" title="Tema: sistem / aydınlık / karanlık">◐</button>
-      <button class="btn ghost" id="btnInstall" hidden title="Masaüstü uygulamasını indir (Windows / macOS)">⤓ İndir</button>
+      <button class="btn ghost" id="btnAbout" title="Platform365 hakkında">ⓘ</button>
+      <button class="btn ghost" id="btnInstall" hidden title="Masaüstü uygulamasını indir (Windows / macOS)">⤓<span class="lbl"> İndir</span></button>
     </div>
   </header>
 
   <main class="hub" id="hub">
     <section class="hero">
-      <div>
+      <div class="hero-main">
         <p class="greet" id="greet">Merhaba</p>
         <h1>Bugün ne oluşturmak istersiniz?</h1>
+        <p class="hero-sub">Sunumlar ve belgeler tek yerde — hesap yok, bulut yok, her şey cihazınızda ve çevrimdışı çalışır.</p>
         <div class="search">
+          <span class="search-ico" aria-hidden="true">🔍</span>
           <input type="search" id="search" placeholder="Tüm sunum ve belgelerde ara… (başlık ve içerik)" aria-label="Ara">
+          <kbd aria-hidden="true">/</kbd>
         </div>
+        <div class="hero-stats">
+          <span class="stat-pill"><i class="dot present"></i><b id="stDecks">0</b></span>
+          <span class="stat-pill"><i class="dot easywrite"></i><b id="stDocs">0</b></span>
+          <span class="stat-pill">🔒 <span>Çevrimdışı çalışır</span></span>
+        </div>
+      </div>
+      <div class="hero-art" aria-hidden="true">
+        <div class="art-card art-slide">
+          <div class="art-bar"><i></i><i></i><i></i></div>
+          <div class="art-slide-body"><b></b><span></span><span></span><span></span><div class="art-chart"><i style="height:40%"></i><i style="height:70%"></i><i style="height:55%"></i><i style="height:90%"></i></div></div>
+        </div>
+        <div class="art-card art-doc">
+          <div class="art-bar"><i></i><i></i><i></i></div>
+          <div class="art-doc-body"><b></b><span></span><span></span><span class="short"></span><span></span><span class="short"></span></div>
+        </div>
+        <div class="art-logo"><img src="icons/platform365.svg" alt="" width="54" height="54"></div>
       </div>
     </section>
 
     <section class="apps">
       <article class="app-card present">
-        <div class="app-head"><img src="icons/icon.svg" alt="" width="44" height="44"><div><h2>Present</h2><p>Sunumlar · PowerPoint uyumlu</p></div></div>
+        <div class="app-head">
+          <span class="app-ico"><img src="icons/icon.svg" alt="" width="40" height="40"></span>
+          <div><h2>Present</h2><p>Sunumlar · PowerPoint uyumlu</p></div>
+        </div>
+        <p class="app-desc">Slaytlar hazırlayın, metinden otomatik sunum oluşturun, kalem ve lazerle sunun.</p>
+        <ul class="chips"><li>Metinden sunum</li><li>Sağlık kontrolü</li><li>Canlı altyazı</li></ul>
         <div class="app-actions">
           <a class="btn primary" href="present/#/new">＋ Yeni sunum</a>
           <button class="btn" data-new-outline>✨ Metinden sunum</button>
@@ -51,7 +79,12 @@
         </div>
       </article>
       <article class="app-card easywrite">
-        <div class="app-head"><img src="icons/easywrite.svg" alt="" width="44" height="44"><div><h2>EasyWrite</h2><p>Belgeler · Word uyumlu</p></div></div>
+        <div class="app-head">
+          <span class="app-ico"><img src="icons/easywrite.svg" alt="" width="40" height="40"></span>
+          <div><h2>EasyWrite</h2><p>Belgeler · Word uyumlu</p></div>
+        </div>
+        <p class="app-desc">Yazın, biçimlendirin, şablonlarla hızlı başlayın; .docx olarak paylaşın.</p>
+        <ul class="chips"><li>Eğik çizgi komutları</li><li>Okunabilirlik</li><li>Dikte ve sesli okuma</li></ul>
         <div class="app-actions">
           <a class="btn primary" href="easywrite/#/new">＋ Yeni belge</a>
           <a class="btn" href="easywrite/#/new/meeting">🗒️ Toplantı notu</a>
@@ -63,6 +96,11 @@
         <h2>Dosya aç</h2>
         <p>.pptx, .present, .docx, .easywrite, .md, .txt, .html dosyalarını buraya bırakın veya tıklayın — doğru uygulamada açılır.</p>
       </article>
+    </section>
+
+    <section>
+      <h2 class="section-title">Hızlı başlangıç</h2>
+      <div class="quick" id="quick"></div>
     </section>
 
     <section>
@@ -83,19 +121,28 @@
       <div class="features" id="features"></div>
     </section>
 
-    <section class="data-sec">
-      <h2 class="section-title">Verileriniz</h2>
-      <div class="data-card">
-        <div class="grow">
-          <b>Her şey bu cihazda saklanır.</b>
-          <p id="storage" class="muted">Hesaplanıyor…</p>
+    <section class="split">
+      <div class="about-sec" id="about">
+        <h2 class="section-title">Hakkında</h2>
+        <div class="about-card" id="aboutCard"></div>
+      </div>
+      <div class="data-sec">
+        <h2 class="section-title">Verileriniz</h2>
+        <div class="data-card">
+          <div class="data-ico" aria-hidden="true">🔒</div>
+          <div class="grow">
+            <b>Her şey bu cihazda saklanır.</b>
+            <p id="storage" class="muted">Hesaplanıyor…</p>
+          </div>
+          <div class="data-actions">
+            <button class="btn" id="btnBackup">💾 Tümünü yedekle</button>
+            <button class="btn" id="btnRestore">♻️ Yedekten geri yükle</button>
+          </div>
         </div>
-        <button class="btn" id="btnBackup">💾 Tümünü yedekle</button>
-        <button class="btn" id="btnRestore">♻️ Yedekten geri yükle</button>
       </div>
     </section>
 
-    <footer class="home-footer">Platform365 <span id="ver"></span> · Present + EasyWrite · Çevrimdışı çalışır · MIT</footer>
+    <footer class="home-footer">Platform365 <span id="ver"></span> · Present + EasyWrite · <span>Çevrimdışı çalışır</span> · MIT · <a href="#about" id="footAbout">Hakkında</a></footer>
   </main>
 
   <div id="toast" class="toast" hidden></div>

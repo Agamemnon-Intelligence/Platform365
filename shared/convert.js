@@ -3,6 +3,7 @@
 'use strict';
 
 (function () {
+  const tx = (s, v) => (window.P365 ? window.P365.t(s, v) : s);
   const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
   /* ---------------- Güvenli HTML ---------------- */
@@ -268,7 +269,7 @@
     const push = (text, lvl = 0) => {
       const t = shorten(text);
       if (!t) return;
-      if (!curr || (!hasH && curr.bullets.length >= 5)) start(curr ? `${curr.title.replace(/ \(devam\)$/, '')} (devam)` : docTitle || 'Giriş');
+      if (!curr || (!hasH && curr.bullets.length >= 5)) start(curr ? tx('{title} (devam)', { title: curr.title.replace(/ \((devam|cont\.)\)$/, '') }) : docTitle || tx('Giriş'));
       curr.bullets.push({ text: t, lvl });
     };
     const visit = (n, lvl) => {
@@ -316,7 +317,7 @@
       if (s.title) html += `<h2>${esc(s.title)}</h2>`;
       let k = 0;
       while (k < s.bullets.length) { const [h, nk] = bulletList(s.bullets, k, s.bullets[k].lvl); html += h; k = nk; }
-      if (s.notes) html += `<div data-callout="info"><p><b>Konuşmacı notu:</b> ${esc(s.notes).replace(/\n/g, '<br>')}</p></div>`;
+      if (s.notes) html += `<div data-callout="info"><p><b>${tx('Konuşmacı notu:')}</b> ${esc(s.notes).replace(/\n/g, '<br>')}</p></div>`;
     }
     return html;
   }

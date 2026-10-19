@@ -615,7 +615,7 @@ const PptxImport = (() => {
         skipped += 1;
         elements.push({ type: 'rect', ...box, fill: '#F1F3F7', stroke: '#C5CAD6', strokeWidth: 1, radius: 0 });
         elements.push({
-          type: 'text', ...box, text: uri.endsWith('/chart') ? 'Grafik (Present\'te gösterilemiyor)' : 'Desteklenmeyen öğe',
+          type: 'text', ...box, text: P365.t(uri.endsWith('/chart') ? 'Grafik (Present\'te gösterilemiyor)' : 'Desteklenmeyen öğe'),
           font: ctx.font(null), fontSize: 16, color: '#6B7183', bold: false, italic: false, underline: false, align: 'center', valign: 'middle', fill: null,
         });
       }
@@ -928,7 +928,7 @@ const PptxImport = (() => {
       const core = await xml('docProps/core.xml');
       title = core ? descendants(core, 'title')[0]?.textContent?.trim() : '';
     }
-    return { deck: { title: title || 'İçe aktarılan sunum', theme: 'light', h: SH, slides }, skipped };
+    return { deck: { title: title || P365.t('İçe aktarılan sunum'), theme: 'light', h: SH, slides }, skipped };
   }
 
   return { convert };

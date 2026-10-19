@@ -6,26 +6,42 @@
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
   const esc = P.esc;
+  const { t } = P;
 
   const FEATURES = [
     ['✨', 'Metinden sunum', 'Ana hattı yapıştırın; başlıklar slayta, maddeler slayt maddesine dönüşür, kalabalık slaytlar otomatik bölünür.', 'present'],
     ['🔁', 'Belge ⇄ Sunum', 'EasyWrite belgesini tek tıkla sunuma, sunumu düzenlenebilir belgeye çevirin.', 'both'],
     ['🩺', 'Sunum sağlık kontrolü', 'Düşük kontrast, küçük yazı, kalabalık slayt, taşan öğe ve yazı tipi karmaşasını puanlar.', 'present'],
     ['✎', 'Sunarken kalem, lazer, büyüteç', 'Slayt üstüne çizin, vurgulayın, lazerle gösterin, bir bölgeyi büyütün — eklenti gerekmez.', 'present'],
-    ['CC', 'Canlı altyazı', 'Sunum sırasında konuşmanız ekranın altında Türkçe altyazıya dönüşür.', 'present'],
+    ['CC', 'Canlı altyazı', 'Sunum sırasında konuşmanız ekranın altında altyazıya dönüşür.', 'present'],
     ['⏱', 'Prova modu', 'Slayt başına süreyi ölçer, uzun kalan slaytları işaretler, süreleri notlara yazar.', 'present'],
     ['🌐', 'Tek dosya web sunumu', 'Sunumu programsız açılan tek bir .html dosyası olarak paylaşın.', 'present'],
     ['/', 'Eğik çizgi komutları', '“/” yazın: başlık, tablo, bilgi kutusu, yapılacaklar, tarih, içindekiler…', 'easywrite'],
     ['#', 'Markdown ile yazma', '# başlık, - madde, **kalın**, [] görev, --- çizgi; Markdown yapıştırınca biçimlenir.', 'easywrite'],
-    ['📖', 'Türkçe okunabilirlik', 'Ateşman puanı, uzun cümle ve dolgu kelime vurgusu, sık tekrarlanan kelimeler.', 'easywrite'],
+    ['📖', 'Okunabilirlik analizi', 'Okunabilirlik puanı (Türkçe için Ateşman, İngilizce için Flesch), uzun cümle ve dolgu kelime vurgusu, sık tekrarlanan kelimeler.', 'easywrite'],
     ['🧮', 'Satır içi hesap', '“1250*12%=” yazın, sonucu kendisi yazar.', 'easywrite'],
     ['◎', 'Odak + daktilo modu', 'Yalnızca yazdığınız paragraf parlak kalır, imleç ekranın ortasında durur.', 'easywrite'],
     ['🍅', 'Pomodoro ve yazma hedefi', 'Kelime hedefi, oturum ilerlemesi ve 25/5 dakikalık odak zamanlayıcısı.', 'easywrite'],
-    ['🎙', 'Dikte ve sesli okuma', 'Konuşarak yazın, belgeyi Türkçe sesli dinleyin.', 'easywrite'],
+    ['🎙', 'Dikte ve sesli okuma', 'Konuşarak yazın, belgeyi sesli dinleyin.', 'easywrite'],
     ['🔍', 'Sürüm karşılaştırma', 'Otomatik sürümler; eski hâl ile şimdiki hâl arasında eklenen/silinen kelimeleri görün.', 'both'],
     ['⌘', 'Komut paleti', 'Ctrl+K ile her komuta yazarak ulaşın — menülerde aramaya son.', 'both'],
     ['💾', 'Tek tıkla tam yedek', 'Tüm sunum, belge ve sürümleri tek dosyada yedekleyin, başka cihaza taşıyın.', 'both'],
+    ['🌐', 'İki dil', 'Arayüz Türkçe veya İngilizce; ilk açılışta sorulur, istediğiniz an değiştirilir.', 'both'],
     ['📴', 'Hesapsız ve çevrimdışı', 'Kayıt yok, bulut yok: her şey cihazınızda kalır, internet olmadan çalışır.', 'both'],
+  ];
+
+  // Hızlı başlangıç: [uygulama, simge, ad, adres veya eylem]
+  const QUICK = [
+    ['present', '▶', 'Boş sunum', 'present/#/new'],
+    ['present', '✨', 'Metinden sunum', 'outline'],
+    ['easywrite', '📄', 'Boş belge', 'easywrite/#/new'],
+    ['easywrite', '✉️', 'Mektup', 'easywrite/#/new/letter'],
+    ['easywrite', '🧑‍💼', 'Özgeçmiş', 'easywrite/#/new/cv'],
+    ['easywrite', '🗒️', 'Toplantı notu', 'easywrite/#/new/meeting'],
+    ['easywrite', '📊', 'Rapor', 'easywrite/#/new/report'],
+    ['easywrite', '🎓', 'Ödev / Makale', 'easywrite/#/new/essay'],
+    ['easywrite', '🚀', 'Proje planı', 'easywrite/#/new/plan'],
+    ['easywrite', '📔', 'Günlük', 'easywrite/#/new/journal'],
   ];
 
   const plainDeck = (d) => (d.slides || []).map((s) => [
@@ -44,12 +60,14 @@
     ps.close();
     es.close();
     items = [
-      ...decks.map((d) => ({ app: 'present', id: d.id, title: d.title || 'Adsız sunum', updated: d.updated, meta: `${(d.slides || []).length} slayt`, text: plainDeck(d).replace(/\s+/g, ' ').trim() })),
+      ...decks.map((d) => ({ app: 'present', id: d.id, title: d.title || t('Adsız sunum'), updated: d.updated, meta: t('{n} slayt', { n: (d.slides || []).length }), text: plainDeck(d).replace(/\s+/g, ' ').trim() })),
       ...docs.map((d) => {
         const text = plainDoc(d).replace(/\s+/g, ' ').trim();
-        return { app: 'easywrite', id: d.id, title: d.title || 'Adsız belge', updated: d.updated, meta: `${(text.match(/[\p{L}\p{N}]+/gu) || []).length} kelime`, text };
+        return { app: 'easywrite', id: d.id, title: d.title || t('Adsız belge'), updated: d.updated, meta: t('{n} kelime', { n: (text.match(/[\p{L}\p{N}]+/gu) || []).length }), text };
       }),
     ].sort((a, b) => b.updated - a.updated);
+    $('#stDecks').textContent = t('{n} sunum', { n: decks.length });
+    $('#stDocs').textContent = t('{n} belge', { n: docs.length });
     render();
   }
 
@@ -58,7 +76,7 @@
     const list = items.filter((it) => (filter === 'all' || it.app === filter) && (!q || norm(it.title).includes(q) || norm(it.text).includes(q)));
     const box = $('#files');
     $('#noFiles').hidden = list.length > 0;
-    $('#noFiles').textContent = q ? 'Aramanızla eşleşen dosya yok.' : 'Henüz dosya yok. Yukarıdan bir sunum veya belge oluşturun.';
+    $('#noFiles').textContent = t(q ? 'Aramanızla eşleşen dosya yok.' : 'Henüz dosya yok. Yukarıdan bir sunum veya belge oluşturun.');
     const mark = (s) => {
       if (!q) return esc(s);
       const i = norm(s).indexOf(q);
@@ -68,7 +86,7 @@
       let snip = it.text.slice(0, 140);
       if (q) { const i = norm(it.text).indexOf(q); if (i > 40) snip = `…${it.text.slice(i - 30, i + 110)}`; }
       return `<a class="file" href="${it.app}/#/d/${encodeURIComponent(it.id)}"><span class="ico ${it.app}">${it.app === 'present' ? '▶' : 'W'}</span>
-        <span class="txt"><b>${mark(it.title)}</b><small>${it.app === 'present' ? 'Present' : 'EasyWrite'} · ${it.meta} · ${P.relTime(it.updated)}</small>${snip ? `<span class="snip">${mark(snip)}</span>` : ''}</span></a>`;
+        <span class="txt"><b translate="no">${mark(it.title)}</b><small>${it.app === 'present' ? 'Present' : 'EasyWrite'} · ${it.meta} · ${P.relTime(it.updated)}</small>${snip ? `<span class="snip" translate="no">${mark(snip)}</span>` : ''}</span></a>`;
     }).join('');
   }
 
@@ -85,7 +103,7 @@
     try {
       await P.inbox.send(app, { kind: 'file', blob: file, name: file.name, type: file.type });
     } catch (e) {
-      P.toast(`Dosya aktarılamadı: ${e.message}`);
+      P.toast(t('Dosya aktarılamadı: {msg}', { msg: e.message }));
     }
   }
 
@@ -97,16 +115,16 @@
     ps.close();
     es.close();
     const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
-    P.download(blob, `Platform365-yedek-${new Date().toISOString().slice(0, 10)}.p365`);
-    P.toast(`${data.decks.length} sunum, ${data.docs.length} belge ve ${data.snapshots.length} sürüm yedeklendi.`);
+    P.download(blob, `Platform365-${P.L('yedek', 'backup')}-${new Date().toISOString().slice(0, 10)}.p365`);
+    P.toast(t('{a} sunum, {b} belge ve {c} sürüm yedeklendi.', { a: data.decks.length, b: data.docs.length, c: data.snapshots.length }));
   }
   async function restore(file) {
     try {
       const data = JSON.parse(await file.text());
-      if (data.format !== 'platform365-backup') throw new Error('Platform365 yedeği değil');
+      if (data.format !== 'platform365-backup') throw new Error(t('Platform365 yedeği değil'));
       const ok = await P.dialog({
         title: 'Yedekten geri yükle',
-        html: `<p>${(data.decks || []).length} sunum, ${(data.docs || []).length} belge ve ${(data.snapshots || []).length} sürüm geri yüklenecek.</p><p class="muted">Aynı kimliğe sahip dosyalar yedektekiyle değiştirilir; diğer dosyalarınız korunur.</p>`,
+        html: `<p>${t('{a} sunum, {b} belge ve {c} sürüm geri yüklenecek.', { a: (data.decks || []).length, b: (data.docs || []).length, c: (data.snapshots || []).length })}</p><p class="muted">Aynı kimliğe sahip dosyalar yedektekiyle değiştirilir; diğer dosyalarınız korunur.</p>`,
         actions: [{ label: 'Vazgeç', value: false }, { label: 'Geri yükle', primary: true, value: true }],
       });
       if (!ok) return;
@@ -120,17 +138,17 @@
       load();
       storage();
     } catch (e) {
-      P.toast(`Geri yüklenemedi: ${e.message}`);
+      P.toast(t('Geri yüklenemedi: {msg}', { msg: e.message }));
     }
   }
   async function storage() {
     const el = $('#storage');
     if (!navigator.storage || !navigator.storage.estimate) { el.textContent = 'Depolama bilgisi alınamadı.'; return; }
     const { usage = 0, quota = 0 } = await navigator.storage.estimate();
-    const mb = (n) => (n / 1048576).toLocaleString('tr-TR', { maximumFractionDigits: 1 });
+    const mb = (n) => (n / 1048576).toLocaleString(P.locale, { maximumFractionDigits: 1 });
     let persisted = false;
     try { persisted = navigator.storage.persisted ? await navigator.storage.persisted() : false; } catch (e) { /* yok */ }
-    el.innerHTML = `${mb(usage)} MB kullanılıyor (kullanılabilir ${mb(quota)} MB). ${persisted ? '🔒 Kalıcı depolama açık.' : '<a href="#" id="persist">Kalıcı depolama iste</a> — tarayıcı yer açarken dosyalarınızı silmesin.'}`;
+    el.innerHTML = `${t('{used} MB kullanılıyor (kullanılabilir {quota} MB).', { used: mb(usage), quota: mb(quota) })} ${persisted ? t('🔒 Kalıcı depolama açık.') : `<a href="#" id="persist">${t('Kalıcı depolama iste')}</a>${t(' — tarayıcı yer açarken dosyalarınızı silmesin.')}`}`;
     $('#persist')?.addEventListener('click', async (e) => {
       e.preventDefault();
       const ok = navigator.storage.persist ? await navigator.storage.persist() : false;
@@ -142,9 +160,16 @@
   function init() {
     P.mountSwitcher('hub');
     $('#ver').textContent = `v${P.VERSION}`;
+    $('#verBadge').textContent = `v${P.VERSION}`;
+    $('#langLbl').textContent = P.lang.toUpperCase();
     const h = new Date().getHours();
-    $('#greet').textContent = `${h < 6 ? 'İyi geceler' : h < 12 ? 'Günaydın' : h < 18 ? 'İyi günler' : 'İyi akşamlar'} · ${new Date().toLocaleDateString('tr-TR', { weekday: 'long', day: 'numeric', month: 'long' })}`;
-    $('#features').innerHTML = FEATURES.map(([i, t, d, a]) => `<div class="feat"><div class="fi">${i}</div><b>${esc(t)}</b><p>${esc(d)}</p><span class="tag ${a}">${a === 'both' ? 'Platform365' : a === 'present' ? 'Present' : 'EasyWrite'}</span></div>`).join('');
+    $('#greet').textContent = `${t(h < 6 ? 'İyi geceler' : h < 12 ? 'Günaydın' : h < 18 ? 'İyi günler' : 'İyi akşamlar')} · ${new Date().toLocaleDateString(P.locale, { weekday: 'long', day: 'numeric', month: 'long' })}`;
+    $('#features').innerHTML = FEATURES.map(([i, ti, d, a]) => `<div class="feat"><div class="fi">${i}</div><b>${esc(t(ti))}</b><p>${esc(t(d))}</p><span class="tag ${a}">${a === 'both' ? 'Platform365' : a === 'present' ? 'Present' : 'EasyWrite'}</span></div>`).join('');
+    $('#quick').innerHTML = QUICK.map(([a, i, n, href]) => {
+      const inner = `<span class="q-ico">${i}</span><b>${esc(t(n))}</b><small>${a === 'present' ? 'Present' : 'EasyWrite'}</small>`;
+      return href === 'outline' ? `<button class="q-tile ${a}" data-new-outline>${inner}</button>` : `<a class="q-tile ${a}" href="${href}">${inner}</a>`;
+    }).join('');
+    $('#aboutCard').innerHTML = P.aboutHtml();
     $('#search').addEventListener('input', render);
     $('#tabs').addEventListener('click', (e) => {
       const b = e.target.closest('[data-f]');
@@ -160,12 +185,14 @@
     document.addEventListener('dragover', (e) => { if (e.dataTransfer.types.includes('Files')) { e.preventDefault(); dz.classList.add('over'); } });
     document.addEventListener('dragleave', (e) => { if (!e.relatedTarget) dz.classList.remove('over'); });
     document.addEventListener('drop', (e) => { dz.classList.remove('over'); const f = e.dataTransfer.files[0]; if (f) { e.preventDefault(); openFile(f); } });
-    $('[data-new-outline]').addEventListener('click', () => P.inbox.send('present', { kind: 'outline-dialog' }));
+    $$('[data-new-outline]').forEach((b) => b.addEventListener('click', () => P.inbox.send('present', { kind: 'outline-dialog' })));
     $('#btnBackup').addEventListener('click', backup);
     $('#btnRestore').addEventListener('click', () => $('#fileRestore').click());
     $('#fileRestore').addEventListener('change', (e) => { const f = e.target.files[0]; if (f) restore(f); e.target.value = ''; });
     $('#btnPalette').addEventListener('click', P.openPalette);
     $('#btnTheme').addEventListener('click', P.cycleTheme);
+    $('#btnLang').addEventListener('click', P.chooseLanguage);
+    $('#btnAbout').addEventListener('click', P.showAbout);
 
     P.initApp({ onFile: openFile });
 
@@ -186,6 +213,7 @@
     });
     load();
     storage();
+    if (location.hash === '#about') P.showAbout();
   }
   init();
 })();
